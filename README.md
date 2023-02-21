@@ -1,3 +1,5 @@
+# Tactical Asset Allocation (TAA)
+
 - Active management of portfolio strategy that shifts allocation based on market trends or economic coniditions (e.g. stocks, bonds, cash, commodities)
 - Benefits are diversification, drawdown control and overall risk management (MDD <20%, SR > 0.75)
 - Typically strategies are absolute return (returns uncorrelated to markets/betas), relative return (beat benchmark) and total return (targeted return)

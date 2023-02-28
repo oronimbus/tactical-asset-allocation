@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pandas as pd
 import yfinance as yf
-from taa.strategies import STRATEGIES
+from src.taa.static import STRATEGIES
 
 
 def get_strategy_price_data(

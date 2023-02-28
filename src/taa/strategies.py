@@ -39,6 +39,6 @@ class StrategyPipeline:
                 frequency=strategy.get("frequency"),
             )
             setattr(self, strategy["tag"].lower(), strat_obj)
-            pipeline + (strat_obj,)
+            pipeline += (strat_obj,)
 
         return pipeline

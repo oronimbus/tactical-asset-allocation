@@ -8,7 +8,9 @@ from taa.strategies import STRATEGIES
 
 
 def get_strategy_price_data(
-    strategies: List[dict], start_date: Union[str, datetime], end_date: Union[str, datetime] = None
+    strategies: List[dict],
+    start_date: Union[str, datetime],
+    end_date: Union[str, datetime] = None,
 ) -> pd.DataFrame:
     """Store strategy data in dataframe."""
     if end_date is None:

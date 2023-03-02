@@ -7,19 +7,25 @@ import pandas as pd
 
 
 def calculate_volatility(
-    returns, lookback: int = 21, factor: int = 252, estimator: str = None
+    returns, lookback: int = 21, factor: int = 252, estimator: str = "hist"
 ) -> pd.DataFrame:
     """Calculate historical volatility for all calendar days.
 
     Args:
         lookback (int, optional): window over which vol is calculated. Defaults to 21.
         factor (int, optional): number of business days in a year. Defaults to 252.
-        estimator (str, optional): volatility estimator. Defaults to None.
+        estimator (str, optional): volatility estimator. Defaults to hist.
 
     Returns:
         pd.DataFrame: time series of volatilities matching rebalance dates
+
+    Raises:
+        NotImplementedError: when estimator is invalid
     """
-    rolling_volatility = returns.rolling(lookback).std() * np.sqrt(factor)
+    if estimator == "hist":
+        rolling_volatility = returns.rolling(lookback).std() * np.sqrt(factor)
+    else:
+        raise NotImplementedError
     return rolling_volatility.asfreq("D").ffill()
 
 
@@ -60,24 +66,42 @@ class EqualWeights(Positions):
 class RiskParity(Positions):
     """Store naive implementation of Risk Parity."""
 
-    def __init__(self, assets, rebalance_dates, returns: pd.DataFrame, **kwargs: dict):
+    def __init__(
+        self,
+        assets,
+        rebalance_dates,
+        returns: pd.DataFrame,
+        estimator: str = "hist",
+        **kwargs: dict
+    ):
+        """Initialize class for Risk Parity calculation.
+
+        Args:
+            assets (_type_): list of asset tickers
+            rebalance_dates (_type_): list of rebalancing dates
+            returns (pd.DataFrame): dataframe of daily asset returns
+            estimator (str, optional): volatility estimation method. Defaults to "hist".
+        """
         super().__init__(assets, rebalance_dates)
         self.returns = returns
         self.__name__ = "RP"
 
         # calculate historical vol (different estimators shall be used later)
-        self.weights = self.create_weights(**kwargs)
+        self.weights = self.create_weights(estimator, **kwargs)
 
-    def create_weights(self, **kwargs: dict) -> pd.DataFrame:
+    def create_weights(self, estimator: str, **kwargs: dict) -> pd.DataFrame:
         """Create risk parity weights and store them in dataframe.
 
         Args:
+            estimator (str, optional): volatility estimation method. Defaults to "hist".
             **kwargs: keyword arguments for volatility estimation
 
         Returns:
             pd.DataFrame: weights for each asset
         """
-        inverse_vols = 1 / calculate_volatility(self.returns, **kwargs)
+        inverse_vols = 1 / calculate_volatility(
+            self.returns, estimator=estimator, **kwargs
+        )
         inverse_vols = inverse_vols.loc[self.rebalances_dates, :]
         vol_weights = inverse_vols.div(inverse_vols.sum(axis=1).values.reshape(-1, 1))
         return vol_weights.stack().rename(self.__name__).to_frame()

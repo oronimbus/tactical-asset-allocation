@@ -1,10 +1,19 @@
 # Tactical Asset Allocation (TAA)
-
+Tactical asset allocation can be characterized as follows:
 - Active management of portfolio strategy that shifts allocation based on market trends or economic coniditions (e.g. stocks, bonds, cash, commodities)
 - Benefits are diversification, drawdown control and overall risk management (MDD <20%, SR > 0.75)
 - Typically strategies are absolute return (returns uncorrelated to markets/betas), relative return (beat benchmark) and total return (targeted return)
 
+## Package
+This package is a current WIP and I update it whenver I get time. The goal of this package is to demonstrate different TAA techniques and how they perform through different economic cycles. Whilst each strategy is unique, they all share certain common characteristics, e.g. momentum signals or dual momentum sorts. The package tries to break down these characteristics into individual modules that can be used on their own.
+
+## Installation
+Eventually, this will be `pip` installable.
+
+
 ## Portfolio Strategies
+Below's a short overview of various TAA strategies. Please refer to the reference list at the bottom for more information. Many of these strategies have been taken from [this](https://twitter.com/WifeyAlpha/status/1502576435134877701) source.
+
 ### Ivy
 - Mimicks the Harvard/Yale endowment strategies (SR: 0.8, MDD: 13%)
 - Equal weights in `VTI`, `VEU`, `VNQ`, `AGG`, `DBC`, rebalanced end of month

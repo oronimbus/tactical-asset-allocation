@@ -5,28 +5,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-
-def calculate_volatility(
-    returns, lookback: int = 21, factor: int = 252, estimator: str = "hist"
-) -> pd.DataFrame:
-    """Calculate historical volatility for all calendar days.
-
-    Args:
-        lookback (int, optional): window over which vol is calculated. Defaults to 21.
-        factor (int, optional): number of business days in a year. Defaults to 252.
-        estimator (str, optional): volatility estimator. Defaults to hist.
-
-    Returns:
-        pd.DataFrame: time series of volatilities matching rebalance dates
-
-    Raises:
-        NotImplementedError: when estimator is invalid
-    """
-    if estimator == "hist":
-        rolling_volatility = returns.rolling(lookback).std() * np.sqrt(factor)
-    else:
-        raise NotImplementedError
-    return rolling_volatility.asfreq("D").ffill()
+from src.taa.utils import calculate_rolling_volatility
 
 
 class Positions:
@@ -99,9 +78,7 @@ class RiskParity(Positions):
         Returns:
             pd.DataFrame: weights for each asset
         """
-        inverse_vols = 1 / calculate_volatility(
-            self.returns, estimator=estimator, **kwargs
-        )
+        inverse_vols = 1 / calculate_rolling_volatility(self.returns, estimator=estimator, **kwargs)
         inverse_vols = inverse_vols.loc[self.rebalances_dates, :]
         vol_weights = inverse_vols.div(inverse_vols.sum(axis=1).values.reshape(-1, 1))
         return vol_weights.stack().rename(self.__name__).to_frame()

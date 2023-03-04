@@ -31,15 +31,11 @@ class Signal:
         returns = self.prices.pct_change()
         ew_basket = returns.mean(axis=1).rename("ew_basket")
         grouper = returns.join(ew_basket)
-        rolling_corr = (
-            grouper.rolling(252).corr(grouper["ew_basket"]).resample("BM").last()
-        )
+        rolling_corr = grouper.rolling(252).corr(grouper["ew_basket"]).resample("BM").last()
 
         avg_return = np.zeros_like(self.monthly_prices)
         for horizon in [1, 3, 6, 12]:
-            avg_return += 0.25 * self.monthly_prices.div(
-                self.monthly_prices.shift(horizon)
-            )
+            avg_return += 0.25 * self.monthly_prices.div(self.monthly_prices.shift(horizon))
 
         score = avg_return * (1 - rolling_corr)
         return score

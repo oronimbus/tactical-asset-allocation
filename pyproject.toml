@@ -1,0 +1,14 @@
+[project]
+name = "taa"
+version = "0.1.0"
+description = "A lean package for analysing tactical asset allocation."
+
+[build-system]
+requires = [
+    "setuptools >= 35.0.2",
+    "setuptools_scm >= 2.0.0, <3"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100

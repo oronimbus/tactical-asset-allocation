@@ -3,6 +3,22 @@ import numpy as np
 import pandas as pd
 
 
+def autocorrelation(returns: pd.DataFrame, order: int = 1) -> np.array:
+    """Calculate autocorrelation for array of returns.
+
+    Args:
+        returns (pd.DataFrame): table of returns
+        order (int, optional): time series lag. Defaults to 1.
+
+    Returns:
+        np.array: array of autocorrelation coefficients
+    """
+    merged = returns.merge(returns.shift(order), on="Date", suffixes=["", "_lag"])
+    n_assets = returns.shape[1]
+    corr = merged.corr().iloc[:n_assets, n_assets:]
+    return np.diag(corr)
+
+
 def calculate_rolling_volatility(
     returns: pd.DataFrame,
     lookback: int = 21,

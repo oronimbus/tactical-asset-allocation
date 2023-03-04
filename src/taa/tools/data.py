@@ -4,7 +4,6 @@ from datetime import datetime
 
 import pandas as pd
 import yfinance as yf
-from src.taa.static import STRATEGIES
 
 
 def get_strategy_price_data(
@@ -27,4 +26,5 @@ def get_strategy_price_data(
 
 
 if __name__ == "__main__":
+    from src.taa.strategy.static import STRATEGIES
     print(get_strategy_price_data(STRATEGIES, "2011-01-01").dropna())

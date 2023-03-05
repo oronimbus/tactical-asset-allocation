@@ -5,6 +5,11 @@ import numpy as np
 
 class Signal:
     def __init__(self, prices: pd.DataFrame):
+        """Initialize signal class with daily returns.
+
+        Args:
+            prices (pd.DataFrame): table of daily returns
+        """
         self.prices = prices
         self.monthly_prices = self.prices.resample("BM").last()
 
@@ -20,10 +25,23 @@ class Signal:
         norm_score = score - 19
         return norm_score
 
-    def sma_crossover(self, looback: int = 12):
-        """Used in Protective Asset Allocation."""
-        sma = self.prices.rolling(looback).mean()
-        cross_over = self.prices.div(sma) - 1
+    def sma_crossover(self, lookback: int = 12) -> pd.DataFrame:
+        r"""Simple Moving Average Crossover using monthly prices.
+
+        Crossover score :math:`Z` over :math:`k` months is calculated as:
+
+        .. math::
+
+            Z = \frac{p_t}{k^{-1} \sum_{i=0}^{k} p_{t-i}} - 1
+
+        Args:
+            lookback (int, optional): number of months used for average. Defaults to 12.
+
+        Returns:
+            pd.DataFrame: table of signal strength
+        """
+        sma = self.prices.rolling(21 * lookback).mean().resample("BM").last()
+        cross_over = self.monthly_prices.div(sma) - 1
         return cross_over
 
     def protective_momentum_score(self):

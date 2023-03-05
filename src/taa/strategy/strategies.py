@@ -16,6 +16,13 @@ class Strategy:
     weights: List[float] = field(default=None)
     frequency: str = field(default="M")
 
+    def get_tickers(self):
+        """Return list of tickers used in strategy."""
+        tickers = []
+        for assets in [self.risk_assets, self.safe_assets, self.canary_assets]:
+            tickers += assets if assets is not None else []
+        return tickers
+
 
 class StrategyPipeline:
     """Pipeline for strategy containers."""

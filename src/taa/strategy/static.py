@@ -6,6 +6,7 @@ STRATEGIES = [
         "tag": "IVY",
         "name": "Ivy",
         "riskAssets": ["VTI", "VEU", "VNQ", "AGG", "DBC"],
+        "safeAssets": ["BIL"],
         "weights": [0.2, 0.2, 0.2, 0.2, 0.2],
         "frequency": "M",
     },

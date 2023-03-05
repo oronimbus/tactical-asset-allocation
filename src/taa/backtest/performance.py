@@ -23,7 +23,7 @@ class Tearsheet:
 
         Args:
             ann_factor (int): annualisation factor or business days in year. Defaults to 252.
-        
+
         Returns:
             pd.DataFrame: table with post-trade statistics
         """
@@ -37,24 +37,24 @@ class Tearsheet:
         se_sr = np.sqrt((1 + np.square(sharpe) / 4 * (kurt - 1) - sharpe * skew) / t_years)
         maxdd = cum_return.div(cum_return.cummax()).sub(1).min()
         downside_vol = self.returns[self.returns < 0].std()
-        
-        summary = OrderedDict({
-            "#obs": int(self.returns.shape[0]),
-            "#years": t_years,
-            "Total Return": cum_return.iloc[-1, :] - 1,
-            "Annual. Return": annual_return,
-            "Volatility": volatility * np.sqrt(ann_factor),
-            "Sharpe Ratio": sharpe * np.sqrt(ann_factor),
-            "StdErr": se_sr,
-            "Sortino": self.returns.mean() / downside_vol * np.sqrt(ann_factor),
-            "Calmar": annual_return / maxdd,
-            "Skewness": skew,
-            "Kurtosis": kurt,
-            "MaxDD": maxdd,
-            "HWM": cum_return.max(),
-            "AutoCorr": autocorrelation(self.returns)
-        })
-        
+
+        summary = OrderedDict(
+            {
+                "#obs": int(self.returns.shape[0]),
+                "#years": t_years,
+                "Total Return": cum_return.iloc[-1, :] - 1,
+                "Annual. Return": annual_return,
+                "Volatility": volatility * np.sqrt(ann_factor),
+                "MaxDD": maxdd,
+                "Skewness": skew,
+                "Kurtosis": kurt,
+                "Sharpe Ratio": sharpe * np.sqrt(ann_factor),
+                "StdErr": se_sr,
+                "Sortino": self.returns.mean() / downside_vol * np.sqrt(ann_factor),
+                "Calmar": annual_return / maxdd,
+                "HWM": cum_return.max(),
+                "AutoCorr": autocorrelation(self.returns),
+            }
+        )
+
         return pd.DataFrame(summary).T
-    
-        

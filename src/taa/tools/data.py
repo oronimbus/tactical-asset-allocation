@@ -100,6 +100,7 @@ def get_currency_returns(
     return fx_returns
 
 
+# TODO: find logic to get currency, yf.Ticker("VTI").get_info() doesn't seem to work...
 def get_issue_currency_for_tickers(tickers: List[str]) -> List[str]:
     """Retrieve currency in which security was issued in.
 

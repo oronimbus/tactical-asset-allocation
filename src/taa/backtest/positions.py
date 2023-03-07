@@ -39,6 +39,7 @@ class EqualWeights(Positions):
         position = np.ones(self.n_assets) / self.n_assets
         self.weights[self.__name__] = np.tile(position, self.n_obs)
         self.weights.sort_index(inplace=True)
+        self.weights.index.names = ["Date", "ID"]
 
 
 # TODO: add more hist. volatility estimators and make kwargs explicit

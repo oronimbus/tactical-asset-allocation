@@ -88,13 +88,14 @@ def get_currency_returns(
     fx_returns = price_data.loc[:, "Adj Close"].pct_change().dropna()
     date_range = pd.bdate_range(start_date, end_date)
     zeros = pd.Series(np.zeros(date_range.shape[0]), index=date_range)
-    to_concat = []
 
+    to_concat = []
     for fx in currency_list:
         if fx == base_currency:
             to_concat.append(zeros)
         else:
             to_concat.append(fx_returns.loc[:, f"{base_currency}{fx}=X"])
+
     fx_returns = pd.concat(to_concat, axis=1).fillna(0)
     fx_returns.columns = currency_list
     return fx_returns
@@ -141,7 +142,7 @@ def get_historical_total_return(
     currencies = get_issue_currency_for_tickers(price_data.columns.to_list())
     if all([fx == portfolio_currency for fx in currencies]):
         return returns
-
+    print("reached")
     start_date, end_date = price_data.index.min(), price_data.index.max()
     fx_returns = get_currency_returns(currencies, start_date, end_date, portfolio_currency)
     fx_returns = fx_returns.reindex(returns.index).fillna(0)

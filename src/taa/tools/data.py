@@ -9,6 +9,24 @@ import yfinance as yf
 from src.taa.strategy.strategies import StrategyPipeline
 
 
+def get_historical_dividends(
+    tickers: List[str], start_date: datetime, end_date: datetime
+) -> pd.DataFrame:
+    """Retrieve historical dividends for universe of stocks using Yahoo! Finance.
+
+    Args:
+        tickers (List[str]): list of equity tickers
+        start_date (datetime): start date of series
+        end_date (datetime): end date of series
+
+    Returns:
+        pd.DataFrame: table of dividends
+    """
+    dividends = [yf.Ticker(x).dividends.rename(x).to_frame() for x in tickers]
+    div_table = pd.concat(dividends, axis=1)
+    return div_table.loc[(div_table.index >= start_date) & (div_table.index <= end_date)]
+
+
 def validate_tickers(tickers: List[str], raise_issue: bool = False) -> bool:
     """Validate list of security tickers.
 
@@ -112,42 +130,6 @@ def get_issue_currency_for_tickers(tickers: List[str]) -> List[str]:
         List[str]: list of currency tickers, e.g. "EUR"
     """
     return ["USD" for _ in tickers]
-
-
-def get_historical_total_return(
-    price_data: pd.DataFrame, portfolio_currency: str = None, return_type: str = "price"
-) -> pd.DataFrame:
-    """Calculate daily total return in portfolio currency.
-
-    Args:
-        price_data (pd.DataFrame): table of closing price
-        portfolio_currency (str, optional): portfolio currency for returns. Defaults to None.
-        return_type (str, optional): returns gross or net of dividends. Defaults to "price".
-
-    Returns:
-        pd.DataFrame: table of asset returns
-
-    Raises:
-        NotImplementedError: if return_type is not equal to "price"
-    """
-    if return_type == "price":
-        returns = price_data.pct_change().dropna()
-    else:
-        raise NotImplementedError
-
-    if portfolio_currency is None:
-        return returns
-
-    # handle currency adjustment (not proven to work yet!)
-    currencies = get_issue_currency_for_tickers(price_data.columns.to_list())
-    if all([fx == portfolio_currency for fx in currencies]):
-        return returns
-    print("reached")
-    start_date, end_date = price_data.index.min(), price_data.index.max()
-    fx_returns = get_currency_returns(currencies, start_date, end_date, portfolio_currency)
-    fx_returns = fx_returns.reindex(returns.index).fillna(0)
-    fx_adj_returns = returns - fx_returns.values
-    return fx_adj_returns
 
 
 def get_strategy_price_data(

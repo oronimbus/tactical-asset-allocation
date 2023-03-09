@@ -1,9 +1,65 @@
 """Calculate portfolio strategy returns."""
 import pandas as pd
 
-from src.taa.tools.data import get_historical_price_data, get_historical_total_return
+from src.taa.tools.data import (
+    get_historical_price_data,
+    get_issue_currency_for_tickers,
+    get_currency_returns,
+    get_historical_dividends,
+)
 
 pd.options.mode.chained_assignment = None
+
+# TODO: fix total return calculation -- adjust prices backwards??
+def get_historical_total_return(
+    price_data: pd.DataFrame, portfolio_currency: str = None, return_type: str = "total"
+) -> pd.DataFrame:
+    r"""Calculate daily total return in portfolio currency.
+
+    The one day total return :math:`r_t` is calculated as:
+
+    .. math::
+
+        r_{t,t-1}=\frac{p_t + d_t - p_{t-1}}{p_{t-1}}
+
+    The dividends :math:`d_t` are retrieved from Yahoo! Finance.
+
+    Args:
+        price_data (pd.DataFrame): table of closing price
+        portfolio_currency (str, optional): portfolio currency for returns. Defaults to None.
+        return_type (str, optional): returns gross or net of dividends. Defaults to "total".
+
+    Returns:
+        pd.DataFrame: table of asset returns
+
+    Raises:
+        NotImplementedError: if return_type is not equal to "price"
+    """
+    start_date, end_date = price_data.index.min(), price_data.index.max()
+    tickers = price_data.columns.to_list()
+
+    if return_type == "price":
+        returns = price_data.pct_change().dropna()
+    elif return_type == "total":
+        dividends = get_historical_dividends(tickers, start_date, end_date)
+        dividends = dividends.reindex(price_data.index)
+        dividends = dividends.cumsum().ffill().fillna(0).loc[:, tickers]
+        returns = price_data.add(dividends).pct_change().dropna()
+    else:
+        raise NotImplementedError
+
+    if portfolio_currency is None:
+        return returns
+
+    # handle currency adjustment (not proven to work yet!)
+    currencies = get_issue_currency_for_tickers(tickers)
+    if all([fx == portfolio_currency for fx in currencies]):
+        return returns
+
+    fx_returns = get_currency_returns(currencies, start_date, end_date, portfolio_currency)
+    fx_returns = fx_returns.reindex(returns.index).fillna(0)
+    fx_adj_returns = returns - fx_returns.values
+    return fx_adj_returns
 
 
 def calculate_drifted_weights(weights: pd.DataFrame, returns: pd.DataFrame) -> pd.DataFrame:
@@ -81,7 +137,7 @@ class Backtester:
 
         # retrieve data for total return calculation
         prices = get_historical_price_data(self.assets, start_date, end_date).loc[:, "Adj Close"]
-        returns = get_historical_total_return(prices, self.portfolio_currency)
+        returns = get_historical_total_return(prices, self.portfolio_currency, **kwargs)
         portfolio_total_return = []
 
         for start, end in zip(self.rebal_dates[:-1], self.rebal_dates[1:]):

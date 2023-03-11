@@ -103,7 +103,7 @@ def get_currency_returns(
     to_process = [f"{base_currency}{fx}=X" for fx in currency_list if fx != base_currency]
     price_data = get_historical_price_data(to_process, start_date, end_date, **kwargs)
 
-    fx_returns = price_data.loc[:, "Adj Close"].pct_change().dropna()
+    fx_returns = price_data.loc[:, "Close"].pct_change().dropna()
     date_range = pd.bdate_range(start_date, end_date)
     zeros = pd.Series(np.zeros(date_range.shape[0]), index=date_range)
 
@@ -156,7 +156,7 @@ def get_strategy_price_data(
         all_tickers += strategy.get_tickers()
 
     data = get_historical_price_data(all_tickers, start_date, end_date)
-    return data.loc[:, "Adj Close"]
+    return data.loc[:, "Close"]
 
 
 if __name__ == "__main__":

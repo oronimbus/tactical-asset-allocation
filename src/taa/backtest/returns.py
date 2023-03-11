@@ -22,7 +22,10 @@ def get_historical_total_return(
 
         r_{t,t-1}=\frac{p_t + d_t - p_{t-1}}{p_{t-1}}
 
-    The dividends :math:`d_t` are retrieved from Yahoo! Finance.
+    The dividends :math:`d_t` are retrieved from Yahoo! Finance. We use the close price instead
+    of the adjusted close price. Both are stock split adjusted but the adjusted close is also
+    backwards-adjusted for dividends, i.e. the dividend paid is subtract from the denominator in
+    the return calculation.
 
     Args:
         price_data (pd.DataFrame): table of closing price
@@ -42,8 +45,7 @@ def get_historical_total_return(
         returns = price_data.pct_change().dropna()
     elif return_type == "total":
         dividends = get_historical_dividends(tickers, start_date, end_date)
-        dividends = dividends.reindex(price_data.index)
-        dividends = dividends.cumsum().ffill().fillna(0).loc[:, tickers]
+        dividends = dividends.reindex(price_data.index).fillna(0).loc[:, tickers]
         returns = price_data.add(dividends).pct_change().dropna()
     else:
         raise NotImplementedError

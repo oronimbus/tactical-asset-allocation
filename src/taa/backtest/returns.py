@@ -1,4 +1,5 @@
 """Calculate portfolio strategy returns."""
+import numpy as np
 import pandas as pd
 
 from src.taa.tools.data import (
@@ -64,7 +65,7 @@ def get_historical_total_return(
     return fx_adj_returns
 
 
-def calculate_drifted_weights(weights: pd.DataFrame, returns: pd.DataFrame) -> pd.DataFrame:
+def calculate_drifted_weight_returns(weights: pd.DataFrame, returns: pd.DataFrame) -> pd.DataFrame:
     """Project cumulative daily returns onto lower frequency returns
 
     Args:
@@ -74,12 +75,20 @@ def calculate_drifted_weights(weights: pd.DataFrame, returns: pd.DataFrame) -> p
     Returns:
         pd.DataFrame: table of drifted weights
     """
-    cum_return = returns.add(1).cumprod().sort_index(axis=1)
-    weights = weights.reindex(cum_return.index).ffill().sort_index(axis=1)
-    drifted_weights = weights.loc[:, cum_return.columns].mul(cum_return.values)
-    end_date = weights.index.max()
-    drifted_weights.loc[end_date, :] = weights[weights.index == end_date].values.flatten()
-    return drifted_weights
+    total_return = []
+    for start, end in zip(weights.index[:-1], weights.index[1:]):
+        w_drift = weights.loc[start, :]
+        simple_returns = returns[(returns.index > start) & (returns.index <= end)]
+        n_obs = simple_returns.shape[0]
+
+        period_returns = np.empty(n_obs)
+        for i in range(n_obs):
+            r_day = np.array(simple_returns)[i, :]
+            period_returns[i] = np.nansum(w_drift * r_day)
+            w_drift = (w_drift * (1 + r_day)) / np.nansum(w_drift * (1 + r_day))
+
+        total_return.append(pd.Series(period_returns, index=simple_returns.index))
+    return pd.concat(total_return)
 
 
 class Backtester:
@@ -116,9 +125,8 @@ class Backtester:
         returns.sort_index(inplace=True)
 
         # calculate drifted weights, then project weights onto returns
-        drifted_weights = calculate_drifted_weights(weights, returns)
-        portfolio_returns = drifted_weights * returns
-        return portfolio_returns.sum(axis=1).rename(strategy).to_frame()
+        strategy_returns = calculate_drifted_weight_returns(weights, returns)
+        return strategy_returns.rename(strategy).to_frame()
 
     def run(self, end_date: str = None, frequency: str = None, **kwargs) -> pd.DataFrame:
         """Run backtester and return strategy returns.
@@ -164,5 +172,5 @@ class Backtester:
             resampled = portfolio_total_return.groupby(pd.Grouper(freq=self.frequency))
             return resampled.apply(lambda x: (1 + x).prod() - 1)
         elif frequency == "D":
-            return resampled
+            return portfolio_total_return
         raise NotImplementedError

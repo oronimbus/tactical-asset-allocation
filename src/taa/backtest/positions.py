@@ -80,6 +80,6 @@ class RiskParity(Positions):
             pd.DataFrame: weights for each asset
         """
         inverse_vols = 1 / calculate_rolling_volatility(self.returns, estimator=estimator, **kwargs)
-        inverse_vols = inverse_vols.loc[self.rebalances_dates, :]
+        inverse_vols = inverse_vols.reindex(self.rebalances_dates)
         vol_weights = inverse_vols.div(inverse_vols.sum(axis=1).values.reshape(-1, 1))
         return vol_weights.stack().rename(self.__name__).to_frame()

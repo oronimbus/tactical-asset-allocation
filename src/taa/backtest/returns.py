@@ -11,7 +11,7 @@ from src.taa.tools.data import (
 
 pd.options.mode.chained_assignment = None
 
-# TODO: fix total return calculation -- adjust prices backwards??
+
 def get_historical_total_return(
     price_data: pd.DataFrame, portfolio_currency: str = None, return_type: str = "total"
 ) -> pd.DataFrame:

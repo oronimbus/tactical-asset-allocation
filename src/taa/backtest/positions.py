@@ -52,6 +52,7 @@ class RiskParity(Positions):
         rebalance_dates,
         returns: pd.DataFrame,
         estimator: str = "hist",
+        lookback: int = 21,
         **kwargs: dict
     ):
         """Initialize class for Risk Parity calculation.
@@ -61,25 +62,30 @@ class RiskParity(Positions):
             rebalance_dates (_type_): list of rebalancing dates
             returns (pd.DataFrame): dataframe of daily asset returns
             estimator (str, optional): volatility estimation method. Defaults to "hist".
+            lookback (float, optional): volatility estimation window. Defaults to 21.
         """
         super().__init__(assets, rebalance_dates)
         self.returns = returns
         self.__name__ = "RP"
 
         # calculate historical vol (different estimators shall be used later)
-        self.weights = self.create_weights(estimator, **kwargs)
+        self.weights = self.create_weights(estimator, lookback, **kwargs)
+        self.weights.index.names = ["Date", "ID"]
 
-    def create_weights(self, estimator: str, **kwargs: dict) -> pd.DataFrame:
+    def create_weights(self, estimator: str, lookback: float, **kwargs: dict) -> pd.DataFrame:
         """Create risk parity weights and store them in dataframe.
 
         Args:
-            estimator (str, optional): volatility estimation method. Defaults to "hist".
+            estimator (str, optional): volatility estimation method.
+            lookback (float, optional): volatility estimation window.
             **kwargs: keyword arguments for volatility estimation
 
         Returns:
             pd.DataFrame: weights for each asset
         """
-        inverse_vols = 1 / calculate_rolling_volatility(self.returns, estimator=estimator, **kwargs)
+        inverse_vols = 1 / calculate_rolling_volatility(
+            self.returns, estimator=estimator, lookback=lookback, **kwargs
+        )
         inverse_vols = inverse_vols.reindex(self.rebalances_dates)
         vol_weights = inverse_vols.div(inverse_vols.sum(axis=1).values.reshape(-1, 1))
         return vol_weights.stack().rename(self.__name__).to_frame()

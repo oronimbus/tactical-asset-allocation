@@ -66,7 +66,14 @@ def get_historical_total_return(
 
 
 def calculate_drifted_weight_returns(weights: pd.DataFrame, returns: pd.DataFrame) -> pd.DataFrame:
-    """Project cumulative daily returns onto lower frequency returns
+    r"""Project cumulative daily returns onto lower frequency returns
+
+    The portfolio weights are iteratively updated using market performance:
+    
+    .. math::
+    
+        w_{i,t} = \frac{w_{i,t-1} \times (1 + r_{i,t})}{\sum_j^N{w_{j,t-1} \times (1 + r_{j,t})}}\\
+        r_{p,t} = \sum_i^N w_{i,t} \times r_{i,t}\\
 
     Args:
         weights (pd.DataFrame): table of portfolio weights

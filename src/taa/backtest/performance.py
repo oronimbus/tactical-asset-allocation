@@ -18,11 +18,11 @@ class Tearsheet:
         self.returns = returns
         self.benchmark = benchmark
 
-    def summary(self, ann_factor: int = 252, **kwargs) -> pd.DataFrame:
+    def summary(self, ann_factor: int = 12, **kwargs) -> pd.DataFrame:
         """Create table with summary statistics.
 
         Args:
-            ann_factor (int): annualisation factor or business days in year. Defaults to 252.
+            ann_factor (int): annualisation factor or business days in year. Defaults to 12.
 
         Returns:
             pd.DataFrame: table with post-trade statistics

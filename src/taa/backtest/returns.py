@@ -87,8 +87,8 @@ def calculate_drifted_weight_returns(weights: pd.DataFrame, returns: pd.DataFram
         w_drift = weights.loc[start, :]
         simple_returns = returns[(returns.index > start) & (returns.index <= end)]
         n_obs = simple_returns.shape[0]
-
         period_returns = np.empty(n_obs)
+
         for i in range(n_obs):
             r_day = np.array(simple_returns)[i, :]
             period_returns[i] = np.nansum(w_drift * r_day)
@@ -132,7 +132,7 @@ class Backtester:
         returns.sort_index(inplace=True)
 
         # calculate drifted weights, then project weights onto returns
-        strategy_returns = calculate_drifted_weight_returns(weights, returns)
+        strategy_returns = calculate_drifted_weight_returns(weights, returns[weights.columns])
         return strategy_returns.rename(strategy).to_frame()
 
     def run(self, end_date: str = None, frequency: str = None, **kwargs) -> pd.DataFrame:

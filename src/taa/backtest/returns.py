@@ -47,7 +47,7 @@ def get_historical_total_return(
     elif return_type == "total":
         dividends = get_historical_dividends(tickers, start_date, end_date)
         dividends = dividends.reindex(price_data.index).fillna(0).loc[:, tickers]
-        returns = price_data.add(dividends).pct_change().dropna()
+        returns = price_data.add(dividends).div(price_data.shift(1).values).sub(1).dropna()
     else:
         raise NotImplementedError
 
@@ -153,7 +153,7 @@ class Backtester:
             end_date = self.rebal_dates.max() + pd.offsets.BDay(1)
 
         # retrieve data for total return calculation
-        prices = get_historical_price_data(self.assets, start_date, end_date).loc[:, "Adj Close"]
+        prices = get_historical_price_data(self.assets, start_date, end_date).loc[:, "Close"]
         returns = get_historical_total_return(prices, self.portfolio_currency, **kwargs)
         portfolio_total_return = []
 

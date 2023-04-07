@@ -1,6 +1,9 @@
-"""Data handlers."""
+"""Data handling and webscraping tools."""
 from typing import Union, List
 from datetime import datetime
+from lxml import html
+from lxml.etree import tostring
+import requests
 
 import numpy as np
 import pandas as pd
@@ -119,17 +122,47 @@ def get_currency_returns(
     return fx_returns
 
 
-# TODO: find logic to get currency, yf.Ticker("VTI").get_info() doesn't seem to work...
-def get_issue_currency_for_tickers(tickers: List[str]) -> List[str]:
+def find_ticker_currency(ticker: str, fallback: str = "USD") -> str:
+    """Find currency of ticker using Yahoo! Finance website.
+
+    If the currency cannot be found then it is assumed to be USD (or which ever fallback specified).
+    Each request times out after 30 seconds.
+
+    Args:
+        ticker (str): ticker symbol
+
+    Returns:
+        str: 3 character string of currency code, e.g. ``USD``
+    """
+    url = f"http://finance.yahoo.com/quote/{ticker}?p={ticker}"
+    
+    try:
+        response = requests.get(url, timeout=30)
+        parser = html.fromstring(response.text)
+        inner_html = str(tostring(parser))
+        to_find = "Currency in"
+        loc_ccy = inner_html.find(to_find) + len(to_find) + 1
+        return inner_html[loc_ccy : loc_ccy + 3]
+    except:
+        return fallback
+
+
+def get_issue_currency_for_tickers(tickers: List[str], assumed_currency: str = None) -> List[str]:
     """Retrieve currency in which security was issued in.
+
+    If the assumed currency is anything but None, then no lookup will be performed and the assumed
+    currency is returned for all tickers. This is to speed up the request since scraping from
+    Yahoo! Finance can be slow. For example a request of 5 tickers takes around 3-4 seconds.
 
     Args:
         tickers (List[str]): list of tickers
 
     Returns:
-        List[str]: list of currency tickers, e.g. "EUR"
+        List[str]: list of currency tickers, e.g. ``EUR``
     """
-    return ["USD" for _ in tickers]
+    if assumed_currency is not None:
+        return [assumed_currency for _ in tickers]
+    return [find_ticker_currency(ticker) for ticker in tickers]
 
 
 def get_strategy_price_data(

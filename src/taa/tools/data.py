@@ -1,13 +1,13 @@
 """Data handling and webscraping tools."""
-from typing import Union, List
 from datetime import datetime
-from lxml import html
-from lxml.etree import tostring
-import requests
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
+import requests
 import yfinance as yf
+from lxml import html
+from lxml.etree import tostring
 
 from taa.strategy.strategies import StrategyPipeline
 
@@ -135,7 +135,7 @@ def find_ticker_currency(ticker: str, fallback: str = "USD") -> str:
         str: 3 character string of currency code, e.g. ``USD``
     """
     url = f"http://finance.yahoo.com/quote/{ticker}?p={ticker}"
-    
+
     try:
         response = requests.get(url, timeout=30)
         parser = html.fromstring(response.text)

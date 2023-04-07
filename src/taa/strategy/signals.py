@@ -1,6 +1,6 @@
 """Computes signals used in the asset allocation schemes."""
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class Signal:

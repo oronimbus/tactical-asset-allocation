@@ -2,12 +2,9 @@
 import numpy as np
 import pandas as pd
 
-from taa.tools.data import (
-    get_historical_price_data,
-    get_issue_currency_for_tickers,
-    get_currency_returns,
-    get_historical_dividends,
-)
+from taa.tools.data import (get_currency_returns, get_historical_dividends,
+                            get_historical_price_data,
+                            get_issue_currency_for_tickers)
 
 pd.options.mode.chained_assignment = None
 

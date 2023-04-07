@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from src.taa.tools.utils import calculate_rolling_volatility
+from taa.tools.utils import calculate_rolling_volatility
 
 
 class Positions:

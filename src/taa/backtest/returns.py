@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-from src.taa.tools.data import (
+from taa.tools.data import (
     get_historical_price_data,
     get_issue_currency_for_tickers,
     get_currency_returns,

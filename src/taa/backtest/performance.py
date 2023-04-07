@@ -4,7 +4,8 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
-from src.taa.tools.utils import autocorrelation
+from taa.tools.utils import autocorrelation
+
 
 # TODO: verify number, formulas taken from memory
 class Tearsheet:

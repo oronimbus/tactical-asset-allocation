@@ -1,7 +1,7 @@
 """Feature backtest modules."""
-from src.taa.backtest.performance import Tearsheet
-from src.taa.backtest.positions import Positions, EqualWeights, RiskParity
-from src.taa.backtest.returns import (
+from taa.backtest.performance import Tearsheet
+from taa.backtest.positions import Positions, EqualWeights, RiskParity
+from taa.backtest.returns import (
     get_historical_total_return,
     get_historical_price_data,
     Backtester,

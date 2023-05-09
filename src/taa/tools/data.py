@@ -1,6 +1,7 @@
 """Data handling and webscraping tools."""
 from datetime import datetime
 from typing import List, Union
+import logging
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,11 @@ from lxml import html
 from lxml.etree import tostring
 
 from taa.strategy.strategies import StrategyPipeline
+from taa.strategy.static import VALID_CURRENCIES
+from taa.tools.logger import setup_logger
+
+setup_logger()
+logger = logging.getLogger(__name__)
 
 
 def get_historical_dividends(
@@ -126,7 +132,7 @@ def find_ticker_currency(ticker: str, fallback: str = "USD") -> str:
     """Find currency of ticker using Yahoo! Finance website.
 
     If the currency cannot be found then it is assumed to be USD (or which ever fallback specified).
-    Each request times out after 30 seconds.
+    Each request times out after 10 seconds.
 
     Args:
         ticker (str): ticker symbol
@@ -134,15 +140,25 @@ def find_ticker_currency(ticker: str, fallback: str = "USD") -> str:
     Returns:
         str: 3 character string of currency code, e.g. ``USD``
     """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
+            AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
+    }
+
     url = f"http://finance.yahoo.com/quote/{ticker}?p={ticker}"
 
     try:
-        response = requests.get(url, timeout=30)
+        response = requests.get(url, headers=headers, timeout=10)
         parser = html.fromstring(response.text)
         inner_html = str(tostring(parser))
         to_find = "Currency in"
         loc_ccy = inner_html.find(to_find) + len(to_find) + 1
-        return inner_html[loc_ccy : loc_ccy + 3]
+        currency = inner_html[loc_ccy : loc_ccy + 3]
+        if currency.upper() in VALID_CURRENCIES:
+            return currency
+        else:
+            logger.warn(f"Unsucessful GET request for {ticker}. Using default currency {fallback}.")
+            return fallback
     except:
         return fallback
 

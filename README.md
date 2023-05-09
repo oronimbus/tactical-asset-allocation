@@ -5,11 +5,14 @@ Tactical asset allocation can be characterized as follows:
 - Typically strategies are absolute return (returns uncorrelated to markets/betas), relative return (beat benchmark) and total return (targeted return)
 
 ## Package
-This package is a current WIP and I update it whenver I get time. The goal of this package is to demonstrate different TAA techniques and how they perform through different economic cycles. Whilst each strategy is unique, they all share certain common characteristics, e.g. momentum signals or dual momentum sorts. The package tries to break down these characteristics into individual modules that can be used on their own.
+This package is a current WIP and I update it whenever I find time. The goal of this package is to demonstrate different TAA techniques and how they perform through different economic cycles. Whilst each strategy is unique, they all share certain common characteristics, e.g. momentum signals or dual momentum sorts. The package tries to break down these characteristics into individual modules that can be used on their own.
 
 ## Installation
-Eventually, this will be `pip` installable.
+Eventually, this will be `pip` installable via:
 
+```
+pip install pytaa
+```
 
 ## Portfolio Strategies
 For an overview of various TAA strategies please have a look at the `src/taa/strategy/README.md` file. You can also check out the reference list at the bottom for more information. Many of these strategies have been taken from [this](https://twitter.com/WifeyAlpha/status/1502576435134877701) source.

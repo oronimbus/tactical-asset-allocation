@@ -21,7 +21,7 @@ class Strategy:
         tickers = []
         for assets in [self.risk_assets, self.safe_assets, self.canary_assets]:
             tickers += assets if assets is not None else []
-        return tickers
+        return list(set(tickers))
 
 
 class StrategyPipeline:

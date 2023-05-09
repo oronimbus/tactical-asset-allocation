@@ -89,3 +89,37 @@ class RiskParity(Positions):
         inverse_vols = inverse_vols.reindex(self.rebalances_dates)
         vol_weights = inverse_vols.div(inverse_vols.sum(axis=1).values.reshape(-1, 1))
         return vol_weights.stack().rename(self.__name__).to_frame()
+
+
+def ranked_score_based_allocation(
+    data: pd.Series, risk_assets: List[str], safe_assets: List[str], top_k: int = 5
+    ) -> pd.DataFrame:
+    """Allocate assets based on threshold using scores.
+    
+    Used in computing the Vigilant portfolios. The allocation works as follows (using $k=5$):
+    Determine the number of assets $n$ with negative $Z$, if $n>4$ allocate 100% in safe asset with 
+    highest momentum score, if $n=3$ put 75% in safest asset, remaining 25% is split equally in 5
+    risk assets with highest momentum, if $n=2$ put 50% in safest asset, 50% split evenly top 5 
+    risk assets etc.
+    
+    Args:
+        data (pd.Series): dataframe with signals
+        risk_assets (List[str]): list of risky assets
+        safe_assets (List[str]): list of safety assets
+        top_k (int, optional): rank threshold. Defaults to 5.
+
+    Returns:
+        pd.DataFrame: dataframe of weights
+    """
+    is_neg = sum(np.where(data < 0, 1, 0))
+    empty = data * np.nan
+    safety = pd.concat([data.loc[safe_assets].argsort().argsort(), empty.loc[risk_assets]])
+    safety = safety[~safety.index.duplicated()].sort_index()
+    risky = pd.concat([data.loc[risk_assets].argsort().argsort(), empty.loc[safe_assets]])
+    risky = risky[~risky.index.duplicated()].sort_index()
+
+    # allocate assets based on number of negative scores
+    safe_weights = np.where(safety == 0, min([1, 0.25 * is_neg]), 0)
+    risk_weights = np.where(risky < top_k, (1 - min([1, 0.25 * is_neg])) / top_k, 0)
+    weights = safe_weights + risk_weights
+    return pd.DataFrame(weights, index=data.index).T

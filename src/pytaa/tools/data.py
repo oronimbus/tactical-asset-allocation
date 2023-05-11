@@ -10,9 +10,9 @@ import yfinance as yf
 from lxml import html
 from lxml.etree import tostring
 
-from taa.strategy.strategies import StrategyPipeline
-from taa.strategy.static import VALID_CURRENCIES
-from taa.tools.logger import setup_logger
+from pytaa.strategy.strategies import StrategyPipeline
+from pytaa.strategy.static import VALID_CURRENCIES
+from pytaa.tools.logger import setup_logger
 
 setup_logger()
 logger = logging.getLogger(__name__)
@@ -209,8 +209,8 @@ def get_strategy_price_data(
 
 
 if __name__ == "__main__":
-    from src.taa.strategy.static import STRATEGIES
-    from src.taa.strategy.strategies import StrategyPipeline
+    from src.pytaa.strategy.static import STRATEGIES
+    from src.pytaa.strategy.strategies import StrategyPipeline
 
     pipeline = StrategyPipeline(STRATEGIES)
     print(get_strategy_price_data(pipeline, "2011-01-01").dropna())

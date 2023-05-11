@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from taa.tools.utils import calculate_rolling_volatility
+from pytaa.tools.utils import calculate_rolling_volatility
 
 
 class Positions:
@@ -17,8 +17,8 @@ class Positions:
         Creates dataframe ``self.weights`` which will be inherited downstream.
 
         Args:
-            assets (_type_): list of tickers
-            rebalance_dates (_type_): list of rebala
+            assets (List[str]): list of tickers
+            rebalance_dates (List[str]): list of rebalance dates
         """
         self.assets = assets
         self.rebalances_dates = rebalance_dates
@@ -92,16 +92,20 @@ class RiskParity(Positions):
 
 
 def vigilant_allocation(
-    data: pd.Series, risk_assets: List[str], safe_assets: List[str], top_k: int = 5, step: float = 0.25
-    ) -> pd.DataFrame:
+    data: pd.Series,
+    risk_assets: List[str],
+    safe_assets: List[str],
+    top_k: int = 5,
+    step: float = 0.25,
+) -> pd.DataFrame:
     """Allocate assets based on threshold using scores.
-    
+
     Used in computing the Vigilant portfolios. The allocation works as follows (using $k=5$):
-    Determine the number of assets $n$ with negative $Z$, if $n>4$ allocate 100% in safe asset with 
+    Determine the number of assets $n$ with negative $Z$, if $n>4$ allocate 100% in safe asset with
     highest momentum score, if $n=3$ put 75% in safest asset, remaining 25% is split equally in 5
-    risk assets with highest momentum, if $n=2$ put 50% in safest asset, 50% split evenly top 5 
+    risk assets with highest momentum, if $n=2$ put 50% in safest asset, 50% split evenly top 5
     risk assets etc.
-    
+
     Args:
         data (pd.Series): dataframe with signals
         risk_assets (List[str]): list of risky assets

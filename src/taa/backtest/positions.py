@@ -91,8 +91,8 @@ class RiskParity(Positions):
         return vol_weights.stack().rename(self.__name__).to_frame()
 
 
-def ranked_score_based_allocation(
-    data: pd.Series, risk_assets: List[str], safe_assets: List[str], top_k: int = 5
+def vigilant_allocation(
+    data: pd.Series, risk_assets: List[str], safe_assets: List[str], top_k: int = 5, step: float = 0.25
     ) -> pd.DataFrame:
     """Allocate assets based on threshold using scores.
     
@@ -107,6 +107,7 @@ def ranked_score_based_allocation(
         risk_assets (List[str]): list of risky assets
         safe_assets (List[str]): list of safety assets
         top_k (int, optional): rank threshold. Defaults to 5.
+        step (float, optional): step in allocation to risk assets given signal. Defaults to 0.25.
 
     Returns:
         pd.DataFrame: dataframe of weights
@@ -119,7 +120,7 @@ def ranked_score_based_allocation(
     risky = risky[~risky.index.duplicated()].sort_index()
 
     # allocate assets based on number of negative scores
-    safe_weights = np.where(safety == 0, min([1, 0.25 * is_neg]), 0)
-    risk_weights = np.where(risky < top_k, (1 - min([1, 0.25 * is_neg])) / top_k, 0)
+    safe_weights = np.where(safety == 0, min([1, step * is_neg]), 0)
+    risk_weights = np.where(risky < top_k, (1 - min([1, step * is_neg])) / top_k, 0)
     weights = safe_weights + risk_weights
     return pd.DataFrame(weights, index=data.index).T

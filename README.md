@@ -1,6 +1,6 @@
-# Tactical Asset Allocation (TAA)
-Tactical asset allocation can be characterized as follows:
-- Active management of portfolio strategy that shifts allocation based on market trends or economic coniditions (e.g. stocks, bonds, cash, commodities)
+# Tactical Asset Allocation (pyTAA)
+This package features a set of tools to backtest systematic, low-frequency strategies and compare various tactical asset allocation (TAA) programms. Tactical asset allocation can be characterized as follows:
+- Active management of portfolio strategy that shifts allocation based on market trends or economic conditions (e.g. stocks, bonds, cash, commodities)
 - Benefits are diversification, drawdown control and overall risk management (MDD <20%, SR > 0.75)
 - Typically strategies are absolute return (returns uncorrelated to markets/betas), relative return (beat benchmark) and total return (targeted return)
 
@@ -26,3 +26,6 @@ For an overview of various TAA strategies please have a look at the `src/taa/str
 - Keller, Wouter J., and Jan Willem Keuning. ‘Protective Asset Allocation (PAA): A Simple Momentum-Based Alternative for Term Deposits’. SSRN Scholarly Paper. Rochester, NY, 5 April 2016. [https://doi.org/10.2139/ssrn.2759734](https://doi.org/10.2139/ssrn.2759734).
 - Kritzman, Mark, Sébastien Page, and David Turkington. ‘Regime Shifts: Implications for Dynamic Strategies’. _Financial Analysts Journal_, 2012, 18.
 - WifeyAlpha, Tactical Asset Allocation, https://twitter.com/WifeyAlpha/status/1502576435134877701
+
+## Disclaimer
+The content is for informational purposes only, you should not construe any such information or other material as legal, tax, investment, financial, or other advice.

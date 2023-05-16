@@ -27,11 +27,11 @@ class Strategy:
 class StrategyPipeline:
     """Pipeline for strategy containers."""
 
-    def __init__(self, strategies: dict):
+    def __init__(self, strategies: List[dict]):
         """Initialize strategy pipeline class."""
         self.pipeline = self._parse_strategies(strategies)
 
-    def _parse_strategies(self, strategies):
+    def _parse_strategies(self, strategies: List[dict]):
         """Parse strategy list and set attribute to tag."""
         pipeline = ()
         for strategy in strategies:

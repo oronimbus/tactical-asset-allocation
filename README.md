@@ -1,5 +1,5 @@
 # Tactical Asset Allocation (pyTAA)
-This package features a set of tools to backtest systematic, low-frequency strategies and compare various tactical asset allocation (TAA) programms. Tactical asset allocation can be characterized as follows:
+This package features a set of tools to backtest systematic, low-frequency strategies and compare various tactical asset allocation (TAA) programs. Asset allocation in general is about finding a balance between risk and reward whilst accounting for investment goals, time frames and risk preferences. Asset allocation often comes in three forms: Strategic, Tactical and Dynamic. Tactical asset allocation takes a more active investment approach and can be characterized as follows:
 - Active management of portfolio strategy that shifts allocation based on market trends or economic conditions (e.g. stocks, bonds, cash, commodities)
 - Benefits are diversification, drawdown control and overall risk management (MDD <20%, SR > 0.75)
 - Typically strategies are absolute return (returns uncorrelated to markets/betas), relative return (beat benchmark) and total return (targeted return)

@@ -8,7 +8,7 @@ This package features a set of tools to backtest systematic, low-frequency strat
 This package is a current WIP and I update it whenever I find time. The goal of this package is to demonstrate different TAA techniques and how they perform through different economic cycles. Whilst each strategy is unique, they all share certain common characteristics, e.g. momentum signals or dual momentum sorts. The package tries to break down these characteristics into individual modules that can be used on their own.
 
 ## Installation
-Eventually, this will be `pip` installable via:
+You can find the package on [PyPi](https://pypi.org/project/pytaa/) and install using `pip`:
 
 ```
 pip install pytaa

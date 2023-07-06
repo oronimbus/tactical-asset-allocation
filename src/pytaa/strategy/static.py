@@ -19,7 +19,7 @@ STRATEGIES = [
         "frequency": "M",
     },
     {
-        "tag": "DGADM",
+        "tag": "DGDM",
         "name": "Diversified GEM Dual Momentum",
         "riskAssets": ["SPY", "AGG", "EFA"],
         "weights": [0.43, 0.3, 0.27],

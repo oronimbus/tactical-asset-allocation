@@ -2,12 +2,9 @@
 import numpy as np
 import pandas as pd
 
-from pytaa.tools.data import (
-    get_currency_returns,
-    get_historical_dividends,
-    get_historical_price_data,
-    get_issue_currency_for_tickers,
-)
+from pytaa.tools.data import (get_currency_returns, get_historical_dividends,
+                              get_historical_price_data,
+                              get_issue_currency_for_tickers)
 
 pd.options.mode.chained_assignment = None
 

@@ -60,7 +60,7 @@ def ledoit_wolf_constant_correlation(
     data: Union[pd.DataFrame, np.array], shrink: float = None
 ) -> np.array:
     """Shrink sample covariance matrix using Ledoit-Wolf (2003).
-    
+
     The Matlab code provided by Ledoit and Wolf can be found here:
     https://github.com/oledoit/covShrinkage/blob/main/covCor.m
 
@@ -85,7 +85,7 @@ def ledoit_wolf_constant_correlation(
     _std = np.tile(std, (n,))
     r_bar = (np.sum(cov_sample / (_std * _std.T)) - n) / (n * (n - 1))
     prior = r_bar * (_std * _std.T)
-    prior[np.diag_indices_from(prior)] = var[:,0]
+    prior[np.diag_indices_from(prior)] = var[:, 0]
 
     if shrink is None:
         # pi hat
@@ -153,8 +153,8 @@ def calculate_risk_parity(
         args=[cov],
         method="SLSQP",
         bounds=scipy.optimize.Bounds(1),
-        constraints= ({"type": "eq", "fun": lambda w: np.sum(w) - 1}),
-        options={"disp": False}
+        constraints=({"type": "eq", "fun": lambda w: np.sum(w) - 1}),
+        options={"disp": False},
     )
 
     if result.success:

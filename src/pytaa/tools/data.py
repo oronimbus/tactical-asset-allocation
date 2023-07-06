@@ -1,7 +1,7 @@
 """Data handling and webscraping tools."""
+import logging
 from datetime import datetime
 from typing import List, Union
-import logging
 
 import numpy as np
 import pandas as pd
@@ -10,8 +10,8 @@ import yfinance as yf
 from lxml import html
 from lxml.etree import tostring
 
-from pytaa.strategy.strategies import StrategyPipeline
 from pytaa.strategy.static import VALID_CURRENCIES
+from pytaa.strategy.strategies import StrategyPipeline
 from pytaa.tools.logger import setup_logger
 
 setup_logger()

@@ -5,7 +5,8 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from pytaa.tools.utils import calculate_rolling_volatility, calculate_risk_parity
+from pytaa.tools.utils import (calculate_risk_parity,
+                               calculate_rolling_volatility)
 
 
 class Positions:
@@ -76,10 +77,10 @@ class RiskParity(Positions):
         """Create risk parity weights and store them in dataframe.
 
         Additional estimation parameters can be passed as keyword arguments.
-    
+
         The estimator can be one of: ``ewma``, ``hist`` or ``equal_risk``. The latter involves an
         optimization process.
-    
+
         Args:
             estimator (str, optional): volatility estimation method.
             lookback (float, optional): volatility estimation window.
@@ -105,14 +106,14 @@ class RiskParity(Positions):
 
     def _rolling_optimization(self, lookback: int, **kwargs):
         weights = []
-        
+
         for date in self.rebalances_dates:
             data = self.returns[self.returns.index <= date].values[-lookback:]
 
             # this is not done yet, just a skeleton of what will work, eventually
             w_opt = calculate_risk_parity(data, **kwargs)
             weights.append(w_opt)
-            
+
         weights = pd.DataFrame(
             np.row_stack(weights), index=self.rebalances_dates, columns=self.returns.columns
         )

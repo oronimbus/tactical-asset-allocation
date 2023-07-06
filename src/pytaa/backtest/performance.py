@@ -28,7 +28,7 @@ class Tearsheet:
         Returns:
             pd.DataFrame: table with post-trade statistics
         """
-        t_years = (self.returns.index[-1] - self.returns.index[0]).days / ann_factor
+        t_years = (self.returns.index[-1] - self.returns.index[0]).days / 365.25
         cum_return = self.returns.add(1).cumprod()
         annual_return = cum_return.iloc[-1, :] ** (1 / t_years) - 1
         skew = self.returns.skew()

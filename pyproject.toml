@@ -1,5 +1,5 @@
 [project]
-name = "taa"
+name = "pytaa"
 version = "0.1.0"
 description = "A lean package for analysing tactical asset allocation."
 

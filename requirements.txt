@@ -1,4 +1,5 @@
 lxml==4.9.1
+numba==0.57.1
 numpy==1.23.2
 pandas==1.4.3
 pytest==7.3.1

@@ -1,3 +1,3 @@
 from setuptools import setup
 
-setup()
+setup(use_scm_version={"version_scheme": "release-branch-semver"})

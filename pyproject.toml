@@ -1,6 +1,5 @@
 [project]
 name = "pytaa"
-version = "0.1.0"
 description = "A lean package for analysing tactical asset allocation."
 
 [build-system]
@@ -17,3 +16,6 @@ line-length = 100
 pythonpath = [
   "src"
 ]
+
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"

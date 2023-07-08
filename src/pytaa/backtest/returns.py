@@ -1,4 +1,5 @@
 """Calculate portfolio strategy returns."""
+import numba
 import numpy as np
 import pandas as pd
 
@@ -62,7 +63,10 @@ def get_historical_total_return(
     return fx_adj_returns
 
 
-def calculate_drifted_weight_returns(weights: pd.DataFrame, returns: pd.DataFrame) -> pd.DataFrame:
+@numba.njit
+def calculate_drifted_weight_returns(
+    returns: np.array, weights: np.array, rebal_index: np.array
+) -> np.array:
     r"""Project cumulative daily returns onto lower frequency returns
 
     The portfolio weights are iteratively updated using market performance:
@@ -73,26 +77,24 @@ def calculate_drifted_weight_returns(weights: pd.DataFrame, returns: pd.DataFram
         r_{p,t} = \sum_i^N w_{i,t} \times r_{i,t}\\
 
     Args:
-        weights (pd.DataFrame): table of portfolio weights
-        returns (pd.DataFrame): table of daily returns
-
+        weights (np.array): KxM table of portfolio weights
+        returns (np.array): NxM table of daily returns
+        rebal_index (np.array): Kx0 1d array of rebalance indices for returns
     Returns:
-        pd.DataFrame: table of drifted weights
+        np.array: Nx1 vector of drifted returns
     """
-    total_return = []
-    for start, end in zip(weights.index[:-1], weights.index[1:]):
-        w_drift = weights.loc[start, :]
-        simple_returns = returns[(returns.index > start) & (returns.index <= end)]
-        n_obs = simple_returns.shape[0]
-        period_returns = np.empty(n_obs)
+    n_obs, n_assets = returns.shape[0], weights.shape[1]
+    total_return = np.zeros((n_obs, 1), dtype=np.float64)
+    w_drift = np.zeros(n_assets)
 
-        for i in range(n_obs):
-            r_day = np.array(simple_returns)[i, :]
-            period_returns[i] = np.nansum(w_drift * r_day)
+    for i in range(n_obs):
+        if i in rebal_index:
+            w_drift = weights[np.where(rebal_index == i)[0][0], :]
+        else:
+            r_day = returns[i, :]
+            total_return[i, :] = np.nansum(w_drift * r_day)
             w_drift = (w_drift * (1 + r_day)) / np.nansum(w_drift * (1 + r_day))
-
-        total_return.append(pd.Series(period_returns, index=simple_returns.index))
-    return pd.concat(total_return)
+    return total_return
 
 
 class Backtester:
@@ -110,35 +112,35 @@ class Backtester:
         self.strategies = self.weights.columns
         self.frequency = pd.infer_freq(self.rebal_dates)
 
-    def _process_strategy(
-        self, weights: pd.DataFrame, returns: pd.DataFrame, strategy: str
-    ) -> pd.DataFrame:
+    def _process_strategy(self, returns: pd.DataFrame, strategy: str) -> pd.DataFrame:
         """Project weights onto returns for a given strategy.
 
         Args:
-            weights (pd.DataFrame): table of portfolio weights
             returns (pd.DataFrame): table of asset returns
             strategy (str): label of strategy
 
         Returns:
             pd.DataFrame: table of simple returns per strategy
         """
-        # prep input data for right shape
-        weights = weights.loc[:, [strategy]].unstack().droplevel(0, 1)
-        returns.loc[weights.index.min(), :] = 0
-        returns.sort_index(inplace=True)
+        strat_weights = self.weights[strategy].unstack().fillna(0)
+        strat_returns = returns.loc[:, strat_weights.columns]
+        temp_idx = pd.bdate_range(strat_weights.index.min(), strat_returns.index.max())
+        strat_returns = strat_returns.reindex(temp_idx).fillna(0)
+        rebal_index = list(map(strat_returns.index.get_loc, strat_weights.index))
+        total_return = calculate_drifted_weight_returns(
+            np.asarray(strat_returns), np.asarray(strat_weights), np.asarray(rebal_index)
+        )
+        return pd.DataFrame(total_return, index=strat_returns.index, columns=[strategy])
 
-        # calculate drifted weights, then project weights onto returns
-        strategy_returns = calculate_drifted_weight_returns(weights, returns[weights.columns])
-        return strategy_returns.rename(strategy).to_frame()
-
-    def run(self, end_date: str = None, frequency: str = None, **kwargs) -> pd.DataFrame:
+    def run(
+        self, end_date: str = None, frequency: str = None, return_type: str = "total"
+    ) -> pd.DataFrame:
         """Run backtester and return strategy returns.
 
         Args:
             end_date (str, optional): end date of strategy. Defaults to None.
             frequency (str, optional): frequency of portfolio returns. Defaults to None.
-
+            return_type (str, optional): either ``price`` or ``total`` return
         Returns:
             pd.DataFrame: table of portfolio returns
 
@@ -151,26 +153,16 @@ class Backtester:
 
         # retrieve data for total return calculation
         prices = get_historical_price_data(self.assets, start_date, end_date).loc[:, "Close"]
-        returns = get_historical_total_return(prices, self.portfolio_currency, **kwargs)
+        returns = get_historical_total_return(prices, self.portfolio_currency, return_type)
         portfolio_total_return = []
 
-        for start, end in zip(self.rebal_dates[:-1], self.rebal_dates[1:]):
-            period_returns = returns[(returns.index > start) & (returns.index <= end)]
-            period_weights = self.weights[
-                (self.weights.index.get_level_values(0) >= start)
-                & (self.weights.index.get_level_values(0) <= end)
-            ]
-
-            # process each strategy separately
-            period_results = []
-            for strategy in self.strategies:
-                strategy_returns = self._process_strategy(period_weights, period_returns, strategy)
-                period_results.append(strategy_returns)
-
-            portfolio_total_return.append(pd.concat(period_results, axis=1))
+        for strategy in self.weights.columns:
+            total_return = self._process_strategy(returns, strategy)
+            portfolio_total_return.append(total_return)
 
         # concat all strategy returns, then aggregate to chosen frequency
-        portfolio_total_return = pd.concat(portfolio_total_return).sort_index()
+        portfolio_total_return = pd.concat(portfolio_total_return, axis=1)
+        portfolio_total_return.index.name = "Date"
 
         if frequency is None:
             resampled = portfolio_total_return.groupby(pd.Grouper(freq=self.frequency))

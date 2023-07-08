@@ -1,4 +1,5 @@
 """Data handling and webscraping tools."""
+import concurrent.futures
 import logging
 from datetime import datetime
 from typing import List, Union
@@ -163,12 +164,11 @@ def find_ticker_currency(ticker: str, fallback: str = "USD") -> str:
         return fallback
 
 
-def get_issue_currency_for_tickers(tickers: List[str], assumed_currency: str = None) -> List[str]:
+def get_issue_currency_for_tickers(tickers: List[str]) -> List[str]:
     """Retrieve currency in which security was issued in.
 
-    If the assumed currency is anything but None, then no lookup will be performed and the assumed
-    currency is returned for all tickers. This is to speed up the request since scraping from
-    Yahoo! Finance can be slow. For example a request of 5 tickers takes around 3-4 seconds.
+    A request of 5 tickers takes around 3-4 seconds. The request is sped up using asynchronous
+    execution.
 
     Args:
         tickers (List[str]): list of tickers
@@ -176,9 +176,15 @@ def get_issue_currency_for_tickers(tickers: List[str], assumed_currency: str = N
     Returns:
         List[str]: list of currency tickers, e.g. ``EUR``
     """
-    if assumed_currency is not None:
-        return [assumed_currency for _ in tickers]
-    return [find_ticker_currency(ticker) for ticker in tickers]
+    results = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        futures = {executor.submit(find_ticker_currency, ticker): ticker for ticker in tickers}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                results[futures[future]] = future.result()
+            except Exception as exc:
+                logger.warn(exc)
+    return [results[ticker] for ticker in tickers]
 
 
 def get_strategy_price_data(

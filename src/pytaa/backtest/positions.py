@@ -5,8 +5,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from pytaa.tools.utils import (calculate_risk_parity,
-                               calculate_rolling_volatility)
+from pytaa.tools.utils import calculate_risk_parity, calculate_rolling_volatility
 
 
 class Positions:
@@ -147,13 +146,13 @@ def vigilant_allocation(
     """
     is_neg = sum(np.where(data < 0, 1, 0))
     empty = data * np.nan
-    safety = pd.concat([data.loc[safe_assets].argsort().argsort(), empty.loc[risk_assets]])
+    safety = pd.concat([data.loc[safe_assets].rank(ascending=False), empty.loc[risk_assets]])
     safety = safety[~safety.index.duplicated()].sort_index()
-    risky = pd.concat([data.loc[risk_assets].argsort().argsort(), empty.loc[safe_assets]])
+    risky = pd.concat([data.loc[risk_assets].rank(ascending=False), empty.loc[safe_assets]])
     risky = risky[~risky.index.duplicated()].sort_index()
 
     # allocate assets based on number of negative scores
-    safe_weights = np.where(safety == 0, min([1, step * is_neg]), 0)
-    risk_weights = np.where(risky < top_k, (1 - min([1, step * is_neg])) / top_k, 0)
+    safe_weights = np.where(safety == 1, min([1, step * is_neg]), 0)
+    risk_weights = np.where(risky <= top_k, (1 - min([1, step * is_neg])) / top_k, 0)
     weights = safe_weights + risk_weights
-    return pd.DataFrame(weights, index=data.index).T
+    return pd.DataFrame(weights, index=safety.index).T

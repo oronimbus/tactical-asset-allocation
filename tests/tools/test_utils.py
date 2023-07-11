@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from pytaa.tools.utils import (
+from pytaa.tools.risk import (
     autocorrelation, calculate_rolling_volatility, calculate_risk_parity, risk_contribution
 )
 

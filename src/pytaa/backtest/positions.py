@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from pytaa.tools.utils import calculate_risk_parity, calculate_rolling_volatility
+from pytaa.tools.risk import calculate_risk_parity, calculate_rolling_volatility, Covariance
 
 
 class Positions:
@@ -103,14 +103,17 @@ class RiskParity(Positions):
 
         return weights.stack().rename(self.__name__).to_frame()
 
-    def _rolling_optimization(self, lookback: int, **kwargs):
+    def _rolling_optimization(
+        self, lookback: int, shrinkage: str = None, shrinkage_factor: float = None
+    ) -> pd.DataFrame:
         weights = []
 
         for date in self.rebalances_dates:
-            data = self.returns[self.returns.index <= date].values[-lookback:]
+            data = self.returns[self.returns.index <= date].iloc[-lookback:, :]
+            cov = Covariance(data, shrinkage, shrinkage_factor)
 
             # this is not done yet, just a skeleton of what will work, eventually
-            w_opt = calculate_risk_parity(data, **kwargs)
+            w_opt = calculate_risk_parity(cov)
             weights.append(w_opt)
 
         weights = pd.DataFrame(

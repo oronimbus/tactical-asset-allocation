@@ -118,43 +118,74 @@ def ledoit_wolf_constant_correlation(
     return shrunk_cov
 
 
-def calculate_risk_parity(
-    data: np.array, shrinkage_method: str = None, shrinkage_factor: float = None
-) -> np.array:
+class Covariance:
+    def __init__(self, data: pd.DataFrame, shrinkage: str = None, shrinkage_factor: float = None):
+        """Initialise covariance matrix.
+
+        Currently the following shrinkage factors are supported: ``None``, ``ledoit_wolf`` and
+        ``constant``. Constant shrinkage shrinks the covar matrix towards the identity matrix.
+        If using constant shrinkage, then a shrinkage factor must be provided.
+
+        Args:
+            data (pd.DataFrame): data table
+            shrinkage (str, optional): shrinkage method. Defaults to None.
+            shrinkage_factor (float, optional): shrinkage factor between 0 and 1. Defaults to None.
+        """
+        self.data = data
+        self.shrinkage = shrinkage
+        self.shrinkage_factor = shrinkage_factor
+        return self._estimate()
+
+    def _estimate(self) -> np.array:
+        """Estimate variance-covariance matrix.
+
+        Raises:
+            NotImplementedError: if shrinkage method is invalid
+
+        Returns:
+            np.array: NxN covariance matrix
+        """
+
+        if self.shrinkage is None:
+            return np.cov(self.data, rowvar=False)
+        elif self.shrinkage == "ledoit_wolf":
+            return ledoit_wolf_constant_correlation(self.data, self.shrinkage_factor)
+        elif self.shrinkage == "constant":
+            sample_cov = np.cov(self.data, rowvar=False)
+            target_cov = (1 - self.shrinkage_factor) * np.eye(sample_cov.shape[1])
+            return self.shrinkage_factor * sample_cov + target_cov
+        else:
+            raise NotImplementedError
+
+
+def calculate_risk_parity(cov: Union[Covariance, np.array]) -> np.array:
     """Allocate risk equally without leverage.
 
-    Shrinkage can be one of [``ledoit_wolf``, ``constant``]. Constant shrinkage shrinks the covar
-    matrix towards the identity matrix. If using constant shrinkage, then a shrinkage factor must
-    be provided.
+    The methodology can be found in  Maillard, Roncalli & Teiletche (2009):
+    http://www.thierry-roncalli.com/download/erc.pdf
 
     Args:
-        data (np.array): table of returns
-        shrinkage_method (str, optional): shrinkage method. Defaults to None.
-        shrinkage_factor (str, optional): shrinkage factor. Defaults to None.
+        cov (Union[Covariance, np.array]): covariance matrix
 
     Returns:
         np.array: a 1d vector of weights
     """
-    if shrinkage_method is None:
-        cov = np.cov(data, rowvar=False)
-    elif shrinkage_method == "ledoit_wolf":
-        cov = ledoit_wolf_constant_correlation(data, shrinkage_factor)
-    elif shrinkage_factor == "constant":
-        sample_cov = np.cov(data, rowvar=False)
-        cov = shrinkage_factor * sample_cov + (1 - shrinkage_factor) * np.eye(sample_cov.shape[1])
-    else:
-        raise NotImplementedError
+    n_assets = cov.shape[0]
+    initial_weights = np.ones((n_assets, 1)) / n_assets
 
-    initial_weights = 1 / np.sqrt(np.diag(cov).reshape(-1, 1))
+    constraints = (
+        {"type": "ineq", "fun": lambda w: np.sum(np.log(w)) + n_assets * np.log(n_assets) + 0.1},
+        {"type": "ineq", "fun": lambda w: w},
+    )
 
     result = scipy.optimize.minimize(
-        lambda w, S: np.sqrt(w.T @ S @ w) - np.sum(np.log(w)),
-        x0=1 / np.ones(cov.shape[0]),
+        lambda w, S: np.sqrt(w.T @ S @ w),
+        x0=initial_weights,
         args=[cov],
         method="SLSQP",
-        bounds=scipy.optimize.Bounds(1),
-        constraints=({"type": "eq", "fun": lambda w: np.sum(w) - 1}),
+        constraints=constraints,
         options={"disp": False},
+        tol=1e-9,
     )
 
     if result.success:

@@ -32,7 +32,7 @@ def calculate_rolling_volatility(
     """Calculate historical volatility for all calendar days.
 
     Currently supported estimators are ``hist`` (realised standard deviation over lookback) and
-    ``ewm`` (exponentially weighted with decay factor equal to :math:`1 - \lambda`).
+    ``ewma`` (exponentially weighted with decay factor equal to :math:`1 - \lambda`).
 
     Args:
         returns (pd.DataFrame): table of asset returns
@@ -49,7 +49,7 @@ def calculate_rolling_volatility(
     """
     if estimator == "hist":
         rolling_volatility = returns.rolling(lookback).std()
-    elif estimator == "ewm":
+    elif estimator == "ewma":
         rolling_volatility = returns.ewm(alpha=1 - decay).std()
     else:
         raise NotImplementedError
@@ -118,25 +118,33 @@ def ledoit_wolf_constant_correlation(
     return shrunk_cov
 
 
-class Covariance:
-    def __init__(self, data: pd.DataFrame, shrinkage: str = None, shrinkage_factor: float = None):
+class Covariance(np.ndarray):
+    def __new__(
+        cls,
+        data: pd.DataFrame,
+        shrinkage: str = None,
+        shrinkage_factor: float = None,
+        **kwargs: dict
+    ):
         """Initialise covariance matrix.
 
-        Currently the following shrinkage factors are supported: ``None``, ``ledoit_wolf`` and
-        ``constant``. Constant shrinkage shrinks the covar matrix towards the identity matrix.
-        If using constant shrinkage, then a shrinkage factor must be provided.
+        Currently the following shrinkage factors are supported: ``None``, ``ledoit_wolf``,
+        ``constant`` and ``weighted``. Constant shrinkage shrinks the covar matrix towards the
+        identity matrix. If using constant shrinkage, then a shrinkage factor must be provided.
+        The weighted method follows Ilya Kipnis (2019).
 
         Args:
             data (pd.DataFrame): data table
             shrinkage (str, optional): shrinkage method. Defaults to None.
             shrinkage_factor (float, optional): shrinkage factor between 0 and 1. Defaults to None.
+            **kwargs (dict): additional keyword arguments for estimation method
         """
-        self.data = data
+        self = np.asarray(data).view(cls)
         self.shrinkage = shrinkage
         self.shrinkage_factor = shrinkage_factor
-        return self._estimate()
+        return self._estimate(**kwargs)
 
-    def _estimate(self) -> np.array:
+    def _estimate(self, **kwargs) -> np.array:
         """Estimate variance-covariance matrix.
 
         Raises:
@@ -147,18 +155,21 @@ class Covariance:
         """
 
         if self.shrinkage is None:
-            return np.cov(self.data, rowvar=False)
+            return np.cov(self, rowvar=False)
         elif self.shrinkage == "ledoit_wolf":
-            return ledoit_wolf_constant_correlation(self.data, self.shrinkage_factor)
+            return ledoit_wolf_constant_correlation(self, self.shrinkage_factor)
         elif self.shrinkage == "constant":
-            sample_cov = np.cov(self.data, rowvar=False)
+            sample_cov = np.cov(self, rowvar=False)
             target_cov = (1 - self.shrinkage_factor) * np.eye(sample_cov.shape[1])
             return self.shrinkage_factor * sample_cov + target_cov
+        elif self.shrinkage == "weighted":
+            return weighted_covariance_matrix(self, **kwargs)
         else:
             raise NotImplementedError
 
 
-def calculate_risk_parity(cov: Union[Covariance, np.array]) -> np.array:
+# TODO: add context manager to ignore warnings?
+def calculate_risk_parity_portfolio(cov: Union[Covariance, np.array]) -> np.array:
     """Allocate risk equally without leverage.
 
     The methodology can be found in  Maillard, Roncalli & Teiletche (2009):
@@ -171,16 +182,48 @@ def calculate_risk_parity(cov: Union[Covariance, np.array]) -> np.array:
         np.array: a 1d vector of weights
     """
     n_assets = cov.shape[0]
-    initial_weights = np.ones((n_assets, 1)) / n_assets
+    initial_weights = np.ones(n_assets) / n_assets
 
     constraints = (
-        {"type": "ineq", "fun": lambda w: np.sum(np.log(w)) + n_assets * np.log(n_assets) + 0.1},
+        {"type": "ineq", "fun": lambda w: np.sum(np.log(w)) + n_assets * np.log(n_assets)},
         {"type": "ineq", "fun": lambda w: w},
     )
 
     result = scipy.optimize.minimize(
         lambda w, S: np.sqrt(w.T @ S @ w),
         x0=initial_weights,
+        args=[cov],
+        method="SLSQP",
+        constraints=constraints,
+        options={"disp": False},
+        tol=1e-9,
+    )
+
+    if result.success:
+        return result.x.flatten()
+    return initial_weights
+
+
+def calculate_min_variance_portfolio(cov: Union[Covariance, np.array]) -> np.array:
+    """Calculate minimum variance portfolio with no leverage.
+
+    Args:
+        cov (Union[Covariance, np.array]): covariance matrix
+
+    Returns:
+        np.array: a 1d vector of weights
+    """
+    n_assets = cov.shape[0]
+    initial_weights = np.ones((n_assets)) / n_assets
+
+    constraints = (
+        {"type": "eq", "fun": lambda w: np.sum(w) - 1},
+        {"type": "ineq", "fun": lambda w: w},
+    )
+
+    result = scipy.optimize.minimize(
+        lambda w, S: w.T @ S @ w,
+        initial_weights,
         args=[cov],
         method="SLSQP",
         constraints=constraints,
@@ -207,3 +250,45 @@ def risk_contribution(weights: np.array, cov: np.array) -> np.array:
     marginal_risk_contrib = cov @ weights
     port_risk_contrib = marginal_risk_contrib * weights / port_vol
     return port_risk_contrib
+
+
+def weighted_covariance_matrix(
+    data: pd.DataFrame, weights: list = (12, 4, 2, 1), vol_window: int = 21, ann_factor: int = 252
+) -> np.array:
+    """Calculate weighted covariance matrix.
+    
+    This technique is used in Kipnis Asset Allocation. Each weight in the ``weights`` list refers
+    to a number of months. The weighted correlation matrix is first calculated as:
+    
+    R = [(21-day correlation * 12) + (63-day correlation * 4) + (126-day correlation * 2) + \
+        (252-day correlation)] / 19
+
+    Then the covariance matrix is calculated using 21-day volatility: diag(vol) .* R .* diag(vol).
+
+    More details can be found on:
+    https://quantstrattrader.com/2019/01/24/right-now-its-kda-asset-allocation/
+
+    Args:
+        data (pd.DataFrame): table of returns
+        weights (list): list of weights in months. Defaults to [12, 4, 2, 1].
+        vol_window (int, optional): sample size of volatility. Defaults to 21.
+        ann_factor (int, optional): number of days in year. Defaults to 252.
+
+    Returns:
+        np.array: variance covariance matrix
+    """
+    weighted_corr = None
+    _data = np.asarray(data)
+
+    for window in weights:
+        lookback = int(ann_factor / window)
+        sample_corr = window * np.corrcoef(_data[-lookback:, :], rowvar=False)
+
+        if weighted_corr is None:
+            weighted_corr = sample_corr
+        else:
+            weighted_corr += sample_corr
+
+    weighted_corr = sample_corr / np.sum(weights)
+    sample_vol = np.std(_data[-vol_window:, :], axis=0)
+    return np.diag(sample_vol) @ weighted_corr @ np.diag(sample_vol)

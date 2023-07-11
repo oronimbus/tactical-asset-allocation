@@ -1,11 +1,16 @@
 """Store base functions for weights and positions."""
 from datetime import datetime
-from typing import List
+from typing import Callable, List
 
 import numpy as np
 import pandas as pd
 
-from pytaa.tools.risk import calculate_risk_parity, calculate_rolling_volatility, Covariance
+from pytaa.tools.risk import (
+    calculate_risk_parity_portfolio,
+    calculate_min_variance_portfolio,
+    calculate_rolling_volatility,
+    Covariance,
+)
 
 
 class Positions:
@@ -21,7 +26,7 @@ class Positions:
             rebalance_dates (List[str]): list of rebalance dates
         """
         self.assets = assets
-        self.rebalances_dates = rebalance_dates
+        self.rebalance_dates = rebalance_dates
         self.n_assets, self.n_obs = len(assets), len(rebalance_dates)
 
         # set up multilevel index
@@ -32,7 +37,7 @@ class Positions:
 class EqualWeights(Positions):
     """Store equally weighted portfolio."""
 
-    def __init__(self, assets, rebalance_dates):
+    def __init__(self, assets: List[str], rebalance_dates: List[datetime]):
         """Initialize and create equally weighted portfolio."""
         super().__init__(assets, rebalance_dates)
         self.__name__ = "EW"
@@ -42,14 +47,13 @@ class EqualWeights(Positions):
         self.weights.index.names = ["Date", "ID"]
 
 
-# TODO: add more hist. volatility estimators and make kwargs explicit
 class RiskParity(Positions):
     """Store naive implementation of Risk Parity."""
 
     def __init__(
         self,
-        assets,
-        rebalance_dates,
+        assets: List[str],
+        rebalance_dates: List[datetime],
         returns: pd.DataFrame,
         estimator: str = "hist",
         lookback: int = 21,
@@ -58,8 +62,8 @@ class RiskParity(Positions):
         """Initialize class for Risk Parity calculation.
 
         Args:
-            assets (_type_): list of asset tickers
-            rebalance_dates (_type_): list of rebalancing dates
+            assets (List[str]): list of asset tickers
+            rebalance_dates (List[datetime]): list of rebalancing dates
             returns (pd.DataFrame): dataframe of daily asset returns
             estimator (str, optional): volatility estimation method. Defaults to "hist".
             lookback (float, optional): volatility estimation window. Defaults to 21.
@@ -72,54 +76,78 @@ class RiskParity(Positions):
         self.weights = self.create_weights(estimator, lookback, **kwargs)
         self.weights.index.names = ["Date", "ID"]
 
-    def create_weights(self, estimator: str, lookback: float, **kwargs: dict) -> pd.DataFrame:
+    def create_weights(self, method: str, lookback: float, **kwargs: dict) -> pd.DataFrame:
         """Create risk parity weights and store them in dataframe.
 
-        Additional estimation parameters can be passed as keyword arguments.
+        The estimator can be one of: ``ewma``, ``hist``, ``equal_risk`` or ``min_variance``. The
+        latter two involve an optimization process.
 
-        The estimator can be one of: ``ewma``, ``hist`` or ``equal_risk``. The latter involves an
-        optimization process.
+        Additional estimation parameters can be passed as keyword arguments. For example you can
+        pass the halflife parameter for ``alpha=0.94`` when using ``ewma``.
 
         Args:
-            estimator (str, optional): volatility estimation method.
+            method (str, optional): volatility estimation method.
             lookback (float, optional): volatility estimation window.
             **kwargs: keyword arguments for volatility estimation
 
         Returns:
             pd.DataFrame: weights for each asset
         """
-        if estimator in ["hist", "ewma"]:
+        if method in ["hist", "ewma"]:
             inverse_vols = 1 / calculate_rolling_volatility(
-                self.returns, estimator=estimator, lookback=lookback, **kwargs
+                self.returns, estimator=method, lookback=lookback, **kwargs
             )
-            inverse_vols = inverse_vols.reindex(self.rebalances_dates)
+            inverse_vols = inverse_vols.reindex(self.rebalance_dates)
             weights = inverse_vols.div(inverse_vols.sum(axis=1).values.reshape(-1, 1))
 
-        elif estimator == "equal_risk":
-            weights = self._rolling_optimization(lookback, **kwargs)
-
+        elif method in ["equal_risk", "min_variance"]:
+            optimizer = {
+                "min_variance": calculate_min_variance_portfolio,
+                "equal_risk": calculate_risk_parity_portfolio,
+            }
+            weights = rolling_optimization(
+                self.returns, self.rebalance_dates, optimizer[method], lookback, **kwargs
+            )
         else:
             raise NotImplementedError
 
+        weights = np.maximum(0, weights)
         return weights.stack().rename(self.__name__).to_frame()
 
-    def _rolling_optimization(
-        self, lookback: int, shrinkage: str = None, shrinkage_factor: float = None
-    ) -> pd.DataFrame:
-        weights = []
 
-        for date in self.rebalances_dates:
-            data = self.returns[self.returns.index <= date].iloc[-lookback:, :]
-            cov = Covariance(data, shrinkage, shrinkage_factor)
+def rolling_optimization(
+    returns: pd.DataFrame,
+    rebalance_dates: List[datetime],
+    optimizer: Callable,
+    lookback: int,
+    shrinkage: str = None,
+    shrinkage_factor: float = None,
+) -> pd.DataFrame:
+    """Perform rolling optimization over rebalance dates.
 
-            # this is not done yet, just a skeleton of what will work, eventually
-            w_opt = calculate_risk_parity(cov)
-            weights.append(w_opt)
+    Args:
+        returns (pd.DataFrame): dataframe of daily asset returns
+        rebalance_dates (List[datetime]): list of rebalancing dates
+        optimizer (Callable): optimization routine, e.g. ``calculate_risk_parity_portfolio``
+        lookback (int): window for covariance data
+        shrinkage (str, optional): covariance shrinkage method. Defaults to None.
+        shrinkage_factor (float, optional): covariance shrinkage factor. Defaults to None.
 
-        weights = pd.DataFrame(
-            np.row_stack(weights), index=self.rebalances_dates, columns=self.returns.columns
-        )
-        return weights
+    Returns:
+        pd.DataFrame: table of optimized asset weights
+    """
+    weights = []
+
+    for date in rebalance_dates:
+        data = returns[returns.index <= date].iloc[-lookback:, :]
+        cov = Covariance(data, shrinkage, shrinkage_factor)
+
+        # this is not done yet, just a skeleton of what will work, eventually
+        w_opt = optimizer(cov)
+        weights.append(w_opt)
+
+    weights = pd.DataFrame(np.row_stack(weights), index=rebalance_dates, columns=returns.columns)
+    return weights
 
 
 def vigilant_allocation(

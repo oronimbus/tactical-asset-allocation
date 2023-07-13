@@ -9,6 +9,7 @@ from pytaa.tools.risk import (
     calculate_risk_parity_portfolio,
     calculate_min_variance_portfolio,
     calculate_rolling_volatility,
+    weighted_covariance_matrix,
     Covariance,
 )
 

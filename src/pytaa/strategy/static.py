@@ -72,7 +72,7 @@ STRATEGIES = [
         "frequency": "M",
     },
     {
-        "tag": "KDAAA",
+        "tag": "GPM",
         "name": "Generalized Protective Momentum",
         "riskAssets": [
             "SPY",

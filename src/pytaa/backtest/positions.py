@@ -142,7 +142,6 @@ def rolling_optimization(
         data = returns[returns.index <= date].iloc[-lookback:, :]
         cov = Covariance(data, shrinkage, shrinkage_factor)
 
-        # this is not done yet, just a skeleton of what will work, eventually
         w_opt = optimizer(cov)
         weights.append(w_opt)
 
@@ -187,3 +186,67 @@ def vigilant_allocation(
     risk_weights = np.where(risky <= top_k, (1 - min([1, step * is_neg])) / top_k, 0)
     weights = safe_weights + risk_weights
     return pd.DataFrame(weights, index=safety.index).T
+
+
+def kipnis_allocation(
+    returns: pd.DataFrame,
+    signals: pd.DataFrame,
+    rebalance_dates: List[pd.Timestamp],
+    canary_assets: List[str],
+    risk_assets: List[str],
+    safe_assets: List[str],
+    top_k: int = 5,
+) -> pd.DataFrame:
+    """Kipnis defensive asset allocation scheme.
+
+    Args:
+        returns (pd.DataFrame): table of asset returns
+        signals (pd.DataFrame): table of asset signals
+        rebalance_dates (List[pd.Timestamp]): list of rebalance dates
+        canary_assets (List[str]): list of canary or proxy assets
+        risk_assets (List[str]): list of risky assets (e.g. equities)
+        safe_assets (List[str]): list of safe assets (e.g. govies)
+        top_k (int, optional): number of risky assets to include. Defaults to 5.
+
+    Returns:
+        pd.DataFrame: table of returns
+    """
+    all_weights = []
+    rebal_dates = [i for i in rebalance_dates if i >= signals.index[0]]
+
+    for date in rebal_dates:
+        signal_sample = signals[signals.index <= date].iloc[-1, :]
+        risk_on = set(signal_sample[signal_sample > 0].index).intersection(canary_assets)
+        ranked = signal_sample[risk_assets].rank(ascending=False)
+        buy_assets = ranked[ranked <= top_k].index
+
+        # if canary assets are positive then go risk on, else allocate to safe assets
+        if len(risk_on) == len(canary_assets):
+            canary_weight = 0
+        elif len(risk_on) == 0:
+            equal_weight = np.ones((1, len(safe_assets))) / len(safe_assets)
+            weights = pd.DataFrame(equal_weight, columns=safe_assets, index=[date])
+            all_weights.append(weights)
+            continue
+        elif signal_sample[safe_assets].le(0).any():
+            weights = pd.DataFrame({"BIL": [1]}, index=[date])
+            all_weights.append(weights)
+            continue
+        else:
+            canary_weight = 0.5
+
+        # calculate min variance portfolio for top k risk assets
+        return_sample = returns.loc[returns.index <= date, list(buy_assets)].iloc[-260:, :]
+        w_cov = weighted_covariance_matrix(return_sample)
+        risky_weights = calculate_min_variance_portfolio(w_cov).reshape(1, -1)
+
+        # stack risk and safe assets together, weighting them by the canary factor
+        safe_weights = np.ones((1, len(safe_assets))) / len(safe_assets)
+        weights = np.hstack([(1 - canary_weight) * risky_weights, canary_weight * safe_weights])
+        cols = list(buy_assets) + list(safe_assets)
+        weights = pd.DataFrame(weights, index=[date], columns=cols)
+
+        # if any assets show up twice remove them
+        weights = weights.loc[:, ~weights.columns.duplicated()]
+        all_weights.append(weights)
+    return pd.concat(all_weights, join="outer").fillna(0)

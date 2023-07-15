@@ -251,3 +251,47 @@ def kipnis_allocation(
         weights = weights.loc[:, ~weights.columns.duplicated()]
         all_weights.append(weights)
     return pd.concat(all_weights, join="outer").fillna(0)
+
+
+def aqr_trend_allocation(
+    returns: pd.DataFrame,
+    signal: pd.DataFrame,
+    rebalance_dates: pd.DatetimeIndex,
+    risk_assets: List[str],
+    cash_asset: str,
+) -> pd.DataFrame:
+    """_summAllocate portfolio to trending assets using AQR Risk Parity methodology.
+
+    Puts share of non-trending assets into cash, depending on signal strength.ary_
+
+    Args:
+        returns (pd.DataFrame): table of asset returns
+        signal (pd.DataFrame): table of signals, i.e. SMA crossovers
+        rebalance_dates (pd.DatetimeIndex): list of rebalance dates
+        risk_assets (List[str]): list of risky assets
+        cash_asset (str): safe or cash asset
+
+    Returns:
+        pd.DataFrame: a table of portfolio weights
+    """
+    strategy_weights = []
+
+    for date in rebalance_dates[rebalance_dates >= signal.dropna().index.min()]:
+        return_sample = returns.loc[returns.index <= date].iloc[-260 * 3 :, :]
+        monthly_ret = return_sample.resample("BM").apply(lambda x: np.prod(1 + x) - 1)
+        excess_ret = monthly_ret[risk_assets].sub(monthly_ret[[cash_asset]].values)
+
+        # weight assets by inverse of vol: s_i = 1 / vol_i / (1 / sum[vol_i])
+        inv_vol = 1 / excess_ret.std() * np.sqrt(12)
+        buy_assets = signal.loc[signal.index <= date, risk_assets].iloc[-1].ge(0)
+        buy_assets = buy_assets[buy_assets == True].index
+
+        # portfolio weights calculation
+        risk_allocation = len(buy_assets) / len(risk_assets)
+        risk_weights = inv_vol.loc[buy_assets] / inv_vol.loc[buy_assets].sum() * risk_allocation
+        weights = risk_weights.rename(date).to_frame().T
+        weights.columns.name, weights.index.name = "ID", "Date"
+        weights[[cash_asset]] = 1 - risk_allocation
+        strategy_weights.append(weights)
+
+    return pd.concat(strategy_weights).fillna(0)

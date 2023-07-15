@@ -38,7 +38,9 @@ class Signal:
         norm_score = score - 19
         return norm_score
 
-    def sma_crossover(self, lookback: int = 12, crossover: bool = True) -> pd.DataFrame:
+    def sma_crossover(
+        self, lookback: int = 12, crossover: bool = True, days: int = 21
+    ) -> pd.DataFrame:
         r"""Simple Moving Average Crossover using monthly prices.
 
         Crossover score :math:`Z` over :math:`k` months is calculated as:
@@ -52,11 +54,12 @@ class Signal:
         Args:
             lookback (int, optional): number of months used for average. Defaults to 12.
             crossover (int, optional): returns crossover else just SMA. Defaults to True.
+            days (int, optional): number of days in a business month. Defaults to 21.
 
         Returns:
             pd.DataFrame: table of signal strength
         """
-        sma = self.prices.rolling(21 * lookback).mean().resample("BM").last()
+        sma = self.prices.rolling(days * lookback).mean().resample("BM").last()
         if crossover:
             return self.monthly_prices.div(sma) - 1
         return sma

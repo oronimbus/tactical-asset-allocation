@@ -175,6 +175,7 @@ class Covariance(np.ndarray):
 
 
 # TODO: add context manager to ignore warnings?
+# TODO: why am I adding 0.1 to the constraint?
 def calculate_risk_parity_portfolio(cov: Union[Covariance, np.array]) -> np.array:
     """Allocate risk equally without leverage.
 

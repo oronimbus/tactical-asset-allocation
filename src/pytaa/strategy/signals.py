@@ -14,8 +14,15 @@ class Signal:
         self.monthly_prices = self.prices.resample("BM").last()
 
     def classic_momentum(self, start: int = 12, end: int = 1) -> pd.DataFrame:
-        """Classic cross-sectional Momentum definition by Jegadeesh.
+        r"""Classic cross-sectional Momentum definition by Jegadeesh.
+        
+        The calculation follows:
+        
+        .. math:: 
+            Z = \frac{P_{t-12}}{P_{t-1}} - 1
 
+        For reference also see Asness (1994, 2013, 2014).
+        
         Args:
             start (int, optional): beginning of momentum period. Defaults to 12.
             end (int, optional): end of momentum period. Defaults to 1.
@@ -23,7 +30,7 @@ class Signal:
         Returns:
             pd.DataFrame: table of momentum signal
         """
-        momentum = self.monthly_prices.shift(start).div(self.monthly_prices.shift(end)) - 1
+        momentum = self.monthly_prices.shift(end).div(self.monthly_prices.shift(start)) - 1
         return momentum
 
     def momentum_score(self) -> pd.DataFrame:
@@ -33,7 +40,7 @@ class Signal:
         for horizon in [12, 4, 2, 1]:
             lag = int(12 / horizon)
             returns = self.monthly_prices.div(self.monthly_prices.shift(lag))
-            score += horizon * returns
+            score = score + (horizon * returns)
 
         norm_score = score - 19
         return norm_score
@@ -64,8 +71,8 @@ class Signal:
             return self.monthly_prices.div(sma) - 1
         return sma
 
-    def protective_momentum_score(self):
-        """User in Generalized Protective Momentum."""
+    def protective_momentum_score(self) -> pd.DataFrame:
+        """Used in Generalized Protective Momentum."""
         returns = self.prices.pct_change()
         ew_basket = returns.mean(axis=1).rename("ew_basket")
         grouper = returns.join(ew_basket)

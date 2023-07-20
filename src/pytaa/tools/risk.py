@@ -35,7 +35,7 @@ def calculate_rolling_volatility(
     estimator: str = "hist",
     decay: float = 0.97,
 ) -> pd.DataFrame:
-    """Calculate historical volatility for all calendar days.
+    r"""Calculate historical volatility for all calendar days.
 
     Currently supported estimators are ``hist`` (realised standard deviation over lookback) and
     ``ewma`` (exponentially weighted with decay factor equal to :math:`1 - \lambda`).
@@ -192,7 +192,7 @@ def calculate_risk_parity_portfolio(cov: Union[Covariance, np.array]) -> np.arra
     initial_weights = inv_sigma / np.sum(inv_sigma)
 
     constraints = (
-        {"type": "ineq", "fun": lambda w: np.sum(np.log(w)) + n_assets * np.log(n_assets)},
+        {"type": "ineq", "fun": lambda w: np.sum(np.log(w)) + n_assets * np.log(n_assets) + 0.1},
         {"type": "ineq", "fun": lambda w: w},
     )
 

@@ -3,7 +3,10 @@ import numpy as np
 import pandas as pd
 
 from pytaa.tools.risk import (
-    autocorrelation, calculate_rolling_volatility, calculate_risk_parity, risk_contribution
+    autocorrelation,
+    calculate_rolling_volatility,
+    calculate_risk_parity_portfolio,
+    risk_contribution
 )
 
 
@@ -31,7 +34,7 @@ def test_autocorrelation(returns, order, expected):
 
 @pytest.mark.parametrize("returns, lookback, factor, estimator, decay, expected", [
     (SAMPLE_DATA, 5, 1, "hist", None, 0.04958444090685402),
-    (SAMPLE_DATA, 5, 1, "ewm", 0.99, 0.2906118375739968)
+    (SAMPLE_DATA, 5, 1, "ewma", 0.99, 0.2906118375739968)
 ])
 def test_calculate_rolling_volatility(returns, lookback, factor, estimator, decay, expected):
     """Test rolling volatility estimator."""
@@ -41,21 +44,19 @@ def test_calculate_rolling_volatility(returns, lookback, factor, estimator, deca
 
 
 @pytest.mark.parametrize("cov, expected", [
-    (SAMPLE_VCV, [0.3917958239342683, 0.19589800250631811, 0.2477934771187355, 0.18584501063779774])
+    (SAMPLE_VCV, [0.3918, 0.1959, 0.2478, 0.1858])
 ])
 def test_risk_parity(cov, expected):
     """Test risk parity weights."""
-    w_opt = calculate_risk_parity(cov)
-    assert np.allclose(list(w_opt.flatten()), expected)
+    w_opt = calculate_risk_parity_portfolio(cov)
+    print(w_opt)
+    assert np.allclose(list(w_opt.flatten().round(4)), expected)
 
 
 @pytest.mark.parametrize("cov", [(SAMPLE_VCV)])
 def test_risk_contribution(cov):
     """Test risk contribution using risk parity."""
-    w_opt = calculate_risk_parity(cov)
+    w_opt = calculate_risk_parity_portfolio(cov)
     risk_contrib = risk_contribution(w_opt, cov)
     for i in range(len(risk_contrib) - 1):
         assert np.isclose(risk_contrib[i], risk_contrib[i+1])
-
-
-

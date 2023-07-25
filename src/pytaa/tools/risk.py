@@ -174,9 +174,9 @@ class Covariance(np.ndarray):
             raise NotImplementedError
 
 
-# TODO: add context manager to ignore warnings?
-# TODO: why am I adding 0.1 to the constraint?
-def calculate_risk_parity_portfolio(cov: Union[Covariance, np.array]) -> np.array:
+def calculate_risk_parity_portfolio(
+    cov: Union[Covariance, np.array], risk_budget: np.array = None
+) -> np.array:
     """Allocate risk equally without leverage.
 
     The methodology can be found in  Maillard, Roncalli & Teiletche (2009):
@@ -184,31 +184,36 @@ def calculate_risk_parity_portfolio(cov: Union[Covariance, np.array]) -> np.arra
 
     Args:
         cov (Union[Covariance, np.array]): covariance matrix
+        risk_budget(np.array): vector of risk bugets summing up to 1
 
     Returns:
         np.array: a 1d vector of weights
     """
-    n_assets = cov.shape[0]
     inv_sigma = 1 / np.sqrt(np.diag(cov))
     initial_weights = inv_sigma / np.sum(inv_sigma)
 
+    if risk_budget is None:
+        risk_budget = np.ones((cov.shape[1], 1)) / cov.shape[1]
+
+    c_max = -cov.shape[0] * np.log(cov.shape[0])
+
     constraints = (
-        {"type": "ineq", "fun": lambda w: np.sum(np.log(w)) + n_assets * np.log(n_assets) + 0.1},
         {"type": "ineq", "fun": lambda w: w},
+        {"type": "ineq", "fun": lambda w: np.sum(risk_budget * np.log(w)) - c_max},
     )
 
     result = scipy.optimize.minimize(
         lambda w, S: np.sqrt(w.T @ S @ w),
         x0=initial_weights,
-        args=[cov],
+        args=(cov),
         method="SLSQP",
         constraints=constraints,
         options={"disp": False},
         tol=1e-9,
     )
-
+    optimal_weights = result.x.flatten() / np.sum(result.x.flatten())
     if result.success:
-        return result.x.flatten()
+        return optimal_weights
     logger.warn("Risk Parity optimization failed: returning inverse vol weights.")
     return initial_weights
 

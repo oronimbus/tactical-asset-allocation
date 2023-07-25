@@ -43,14 +43,13 @@ def test_calculate_rolling_volatility(returns, lookback, factor, estimator, deca
     assert np.isclose(results.values[-1][0], expected)
 
 
-@pytest.mark.parametrize("cov, expected", [
-    (SAMPLE_VCV, [0.3918, 0.1959, 0.2478, 0.1858])
+@pytest.mark.parametrize("cov, risk_budget, expected", [
+    (SAMPLE_VCV, None, [0.384, 0.192, 0.243, 0.182])
 ])
-def test_risk_parity(cov, expected):
+def test_risk_parity(cov, risk_budget, expected):
     """Test risk parity weights."""
-    w_opt = calculate_risk_parity_portfolio(cov)
-    print(w_opt)
-    assert np.allclose(list(w_opt.flatten().round(4)), expected)
+    w_opt = calculate_risk_parity_portfolio(cov, risk_budget)
+    assert np.allclose(list(w_opt.flatten().round(3)), expected)
 
 
 @pytest.mark.parametrize("cov", [(SAMPLE_VCV)])

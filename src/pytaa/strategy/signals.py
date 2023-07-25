@@ -15,14 +15,14 @@ class Signal:
 
     def classic_momentum(self, start: int = 12, end: int = 1) -> pd.DataFrame:
         r"""Classic cross-sectional Momentum definition by Jegadeesh.
-        
+
         The calculation follows:
-        
-        .. math:: 
+
+        .. math::
             Z = \frac{P_{t-12}}{P_{t-1}} - 1
 
         For reference also see Asness (1994, 2013, 2014).
-        
+
         Args:
             start (int, optional): beginning of momentum period. Defaults to 12.
             end (int, optional): end of momentum period. Defaults to 1.

@@ -249,6 +249,40 @@ def calculate_min_variance_portfolio(cov: Union[Covariance, np.array]) -> np.arr
     return initial_weights
 
 
+def calculate_mean_variance_portfolio(mu: np.array, cov: Union[Covariance, np.array]) -> np.array:
+    """Calculate mean-variance portfolio with no leverage.
+
+    Args:
+        mu (np.array): vector of expected returns
+        cov (Union[Covariance, np.array]): covariance matrix
+
+    Returns:
+        np.array: a 1d vector of weights
+    """
+    initial_weights = np.ones(cov.shape[0]) / cov.shape[0]
+
+    constraints = (
+        {"type": "ineq", "fun": lambda w: w},
+        {"type": "eq", "fun": lambda w: np.sum(w) - 1},
+    )
+
+    result = scipy.optimize.minimize(
+        lambda w, S, mu: w.T @ S @ w - w.T @ mu,
+        initial_weights,
+        args=[cov, mu],
+        method="SLSQP",
+        bounds=scipy.optimize.Bounds(0, 1),
+        constraints=constraints,
+        options={"disp": False},
+        tol=1e-9,
+    )
+
+    if result.success:
+        return result.x.flatten()
+    logger.warn("Mean variance optimization failed: returning equal weights.")
+    return initial_weights
+
+
 def risk_contribution(weights: np.array, cov: np.array) -> np.array:
     """Calculate ex-post risk contribution of portfolio allocation.
 

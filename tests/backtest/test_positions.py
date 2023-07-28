@@ -8,6 +8,7 @@ TEST_ASSETS = ["A", "B", "C", "D"]
 TEST_DATES = ["2010-01-31", "2022-02-28"]
 TEST_DATA = pd.Series(dict(zip(TEST_ASSETS, [0.05, -0.1, 0.1, -0.5])))
 
+
 @pytest.mark.parametrize("assets, dates, expected", [
     (TEST_ASSETS, TEST_DATES, 8)   
 ])
@@ -34,12 +35,9 @@ def test_equal_weights(assets, dates, expected):
     (TEST_DATA.abs(), ["A", "B", "C"], ["D"], 3, 1/3, np.array([1/3, 1/3, 1/3, 0])),
     # this case is a bit weird since we have 2 negatives but only one safe asset
     (TEST_DATA, ["A", "B", "C"], ["D"], 3, 1/3, np.array([1/9, 1/9, 1/9, 2/3]))
-   
 ])
 def test_vigilant_allocation(data, ra, sa, k, step, expected):
     """Test Vigilant allocation."""
     va = vigilant_allocation(data, ra, sa, k, step).values
     assert va.sum() == 1
-    print(va)
     assert np.isclose(va, expected).all()
-

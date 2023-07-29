@@ -200,6 +200,20 @@ def kipnis_allocation(
 ) -> pd.DataFrame:
     """Kipnis defensive asset allocation scheme.
 
+    The strategy allocates based on a momentum score, which is a weighted average over different
+    windows. A canary universe is used to allocate either towards risk or safe assets, e.g. if all
+    canary assets are positively trending, then allocate 100% towards the investment universe. If
+    only one canary asset (out of two) has positive trend, then put 50% into crash protection (e.g.
+    a govy ETF like ``IEF``). If no assets has positive trend, then pull the entire funds into crash
+    protection, that is a cash ETF like ``BIL``.
+
+    The final allocation is done using the minimum variance portfolio with a cleaned covariance
+    matrix. It uses a weighted average correlation (over 4 windows) and the 1 month realised
+    volatility.
+
+    The strategy is more closely explained in:
+    https://quantstrattrader.com/2019/01/24/right-now-its-kda-asset-allocation/
+
     Args:
         returns (pd.DataFrame): table of asset returns
         signals (pd.DataFrame): table of asset signals
@@ -240,7 +254,7 @@ def kipnis_allocation(
         return_sample = returns.loc[returns.index <= date, list(buy_assets)].iloc[-260:, :]
         w_cov = weighted_covariance_matrix(return_sample)
         risky_weights = calculate_min_variance_portfolio(w_cov).reshape(1, -1)
-
+        print(canary_weight, all_weights, risky_weights)
         # stack risk and safe assets together, weighting them by the canary factor
         safe_weights = np.ones((1, len(safe_assets))) / len(safe_assets)
         weights = np.hstack([(1 - canary_weight) * risky_weights, canary_weight * safe_weights])

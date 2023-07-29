@@ -299,6 +299,7 @@ def risk_contribution(weights: np.array, cov: np.array) -> np.array:
     return port_risk_contrib
 
 
+# TODO: make this a class WeightedCovariance similar to above
 def weighted_covariance_matrix(
     data: pd.DataFrame, weights: list = (12, 4, 2, 1), vol_window: int = 21, ann_factor: int = 252
 ) -> np.array:

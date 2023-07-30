@@ -254,7 +254,7 @@ def kipnis_allocation(
         return_sample = returns.loc[returns.index <= date, list(buy_assets)].iloc[-260:, :]
         w_cov = weighted_covariance_matrix(return_sample)
         risky_weights = calculate_min_variance_portfolio(w_cov).reshape(1, -1)
-        print(canary_weight, all_weights, risky_weights)
+
         # stack risk and safe assets together, weighting them by the canary factor
         safe_weights = np.ones((1, len(safe_assets))) / len(safe_assets)
         weights = np.hstack([(1 - canary_weight) * risky_weights, canary_weight * safe_weights])

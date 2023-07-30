@@ -28,20 +28,22 @@ class Tearsheet:
         Returns:
             pd.DataFrame: table with post-trade statistics
         """
+        n_obs = self.returns.shape[0]
         t_years = (self.returns.index[-1] - self.returns.index[0]).days / 365.25
         cum_return = self.returns.add(1).cumprod()
         annual_return = cum_return.iloc[-1, :] ** (1 / t_years) - 1
         skew = self.returns.skew()
         kurt = self.returns.kurt() + 3
         volatility = self.returns.std()
-        sharpe = self.returns.mean() / volatility
-        se_sr = np.sqrt((1 + np.square(sharpe) / 4 * (kurt - 1) - sharpe * skew) / t_years)
+        sharpe = self.returns.mean() / volatility  * np.sqrt(ann_factor)
+        # se_sr = np.sqrt((1 + np.square(sharpe) / 4 * (kurt - 1) - sharpe * skew) / t_years)
+        se_sr = np.sqrt(ann_factor / n_obs * (1 + (kurt - 1) / (4 * ann_factor) * sharpe ** 2))
         maxdd = cum_return.div(cum_return.cummax()).sub(1).min()
         downside_vol = self.returns[self.returns < 0].std()
 
         summary = OrderedDict(
             {
-                "#obs": int(self.returns.shape[0]),
+                "#obs": int(n_obs),
                 "#years": t_years,
                 "Total Return": cum_return.iloc[-1, :] - 1,
                 "Annual. Return": annual_return,
@@ -49,7 +51,7 @@ class Tearsheet:
                 "MaxDD": maxdd,
                 "Skewness": skew,
                 "Kurtosis": kurt,
-                "Sharpe Ratio": sharpe * np.sqrt(ann_factor),
+                "Sharpe Ratio": sharpe,
                 "StdErr": se_sr,
                 "Sortino": self.returns.mean() / downside_vol * np.sqrt(ann_factor),
                 "Calmar": annual_return / maxdd,
@@ -57,5 +59,8 @@ class Tearsheet:
                 "AutoCorr": autocorrelation(self.returns),
             }
         )
-
+        
+        if self.benchmark is not None:
+            excess_return = self.returns.drop(self.benchmark, axis=1) - self.returns[self.benchmark]
+            summary["InfoRatio"] = np.mean(excess_return) / np.std(excess_return) * ann_factor
         return pd.DataFrame(summary).T

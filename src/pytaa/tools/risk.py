@@ -22,7 +22,8 @@ def autocorrelation(returns: pd.DataFrame, order: int = 1) -> np.array:
     Returns:
         np.array: array of autocorrelation coefficients
     """
-    merged = returns.merge(returns.shift(order), on="Date", suffixes=["", "_lag"])
+    index = returns.index.name
+    merged = returns.merge(returns.shift(order), on=index, suffixes=["", "_lag"])
     n_assets = returns.shape[1]
     corr = merged.corr().iloc[:n_assets, n_assets:]
     return np.diag(corr)

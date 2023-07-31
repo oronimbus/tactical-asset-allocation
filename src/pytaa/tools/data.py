@@ -34,6 +34,7 @@ def get_historical_dividends(
     """
     dividends = [yf.Ticker(x).dividends.rename(x).to_frame() for x in tickers]
     div_table = pd.concat(dividends, axis=1)
+    div_table.index = div_table.index.tz_localize(None)
     return div_table.loc[(div_table.index >= start_date) & (div_table.index <= end_date)]
 
 

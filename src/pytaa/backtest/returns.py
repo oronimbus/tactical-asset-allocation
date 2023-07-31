@@ -113,7 +113,7 @@ class Backtester:
         self.rebal_dates = self.weights.index.get_level_values(0).unique()
         self.assets = self.weights.index.get_level_values(1).unique()
         self.strategies = self.weights.columns
-        self.frequency = pd.infer_freq(self.rebal_dates)
+        self.frequency = pd.infer_freq(self.rebal_dates) if len(self.rebal_dates) > 3 else None
 
     def _process_strategy(self, returns: pd.DataFrame, strategy: str) -> pd.DataFrame:
         """Project weights onto returns for a given strategy.

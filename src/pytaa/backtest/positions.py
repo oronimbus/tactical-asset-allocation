@@ -27,11 +27,11 @@ class Positions:
             rebalance_dates (List[str]): list of rebalance dates
         """
         self.assets = assets
-        self.rebalance_dates = rebalance_dates
-        self.n_assets, self.n_obs = len(assets), len(rebalance_dates)
+        self.rebalance_dates = pd.DatetimeIndex(rebalance_dates).tz_convert(None)
+        self.n_assets, self.n_obs = len(assets), len(self.rebalance_dates)
 
         # set up multilevel index
-        index = pd.MultiIndex.from_product([rebalance_dates, assets])
+        index = pd.MultiIndex.from_product([self.rebalance_dates, assets])
         self.weights = pd.DataFrame(index=index)
 
 

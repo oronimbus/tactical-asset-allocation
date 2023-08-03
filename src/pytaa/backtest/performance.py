@@ -7,7 +7,6 @@ import pandas as pd
 from pytaa.tools.risk import autocorrelation
 
 
-# TODO: verify number, formulas taken from memory
 class Tearsheet:
     def __init__(self, returns: pd.DataFrame, benchmark: pd.DataFrame = None):
         """Initialize tearsheet with strategy returns and benchmark.
@@ -74,4 +73,5 @@ class Tearsheet:
             summary["Up Capture"] = up_capture / up_capture[self.benchmark] - 1
             summary["Down Capture"] = down_capture / down_capture[self.benchmark] - 1
             summary["Capture Ratio"] = summary["Up Capture"] / summary["Down Capture"]
+
         return pd.DataFrame(summary).T

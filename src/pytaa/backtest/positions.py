@@ -27,7 +27,7 @@ class Positions:
             rebalance_dates (List[str]): list of rebalance dates
         """
         self.assets = assets
-        self.rebalance_dates = pd.DatetimeIndex(rebalance_dates).tz_convert(None)
+        self.rebalance_dates = pd.DatetimeIndex(rebalance_dates, tz="utc").tz_convert(None)
         self.n_assets, self.n_obs = len(assets), len(self.rebalance_dates)
 
         # set up multilevel index

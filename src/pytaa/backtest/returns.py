@@ -70,12 +70,12 @@ def get_historical_total_return(
 def calculate_drifted_weight_returns(
     returns: np.array, weights: np.array, rebal_index: np.array
 ) -> np.array:
-    r"""Project cumulative daily returns onto lower frequency returns
+    r"""Project cumulative daily returns onto lower frequency returns.
 
     The portfolio weights are iteratively updated using market performance:
-    
+
     .. math::
-    
+
         w_{i,t} = \frac{w_{i,t-1} \times (1 + r_{i,t})}{\sum_j^N{w_{j,t-1} \times (1 + r_{j,t})}}\\
         r_{p,t} = \sum_i^N w_{i,t} \times r_{i,t}\\
 
@@ -101,6 +101,24 @@ def calculate_drifted_weight_returns(
 
 
 class Backtester:
+    """Backtest strategies and calculate total returns given input weights.
+
+    The input table should be multi-level where the first level points to the rebalancing date and
+    the second level to the ticker of the asset. For example, a table might look like this:
+
+    | Date       | ID   | Strategy Name |
+    |------------|------|---------------|
+    | 2020-01-31 | SPY  | 0.5           |
+    | 2020-01-31 | AGG  | 0.5           |
+    | 2020-02-28 | SPY  | 0.6           |
+    | 2020-02-28 | AGG  | 0.4           |
+    | 2020-03-31 | SPY  | 0.7           |
+    | 2020-03-31 | AGG  | 0.3           |
+
+    Note that the index is set to ``["Date", "ID"]`` in this case. The weights in the third column
+    should add up to unity for each date.
+    """
+
     def __init__(self, weights: pd.DataFrame, portfolio_currency: str = "USD", **kwargs):
         """Initialize backtester with weights matrix.
 
@@ -170,6 +188,6 @@ class Backtester:
         if frequency is None:
             resampled = portfolio_total_return.groupby(pd.Grouper(freq=self.frequency))
             return resampled.apply(lambda x: (1 + x).prod() - 1)
-        elif frequency == "D":
+        if frequency == "D":
             return portfolio_total_return
         raise NotImplementedError

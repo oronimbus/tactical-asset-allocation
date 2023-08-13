@@ -4,6 +4,8 @@ import pandas as pd
 
 
 class Signal:
+    """Momentum signal class used for tactical asset allocation."""
+
     def __init__(self, prices: pd.DataFrame):
         """Initialize signal class with daily returns.
 
@@ -34,7 +36,7 @@ class Signal:
         return momentum
 
     def momentum_score(self) -> pd.DataFrame:
-        """Used in Vigilant portfolios."""
+        """Calculate weighted average momentum for Vigilant portfolios."""
         score = np.zeros_like(self.monthly_prices)
 
         for horizon in [12, 4, 2, 1]:
@@ -48,7 +50,7 @@ class Signal:
     def sma_crossover(
         self, lookback: int = 12, crossover: bool = True, days: int = 21
     ) -> pd.DataFrame:
-        r"""Simple Moving Average Crossover using monthly prices.
+        r"""Calculate simple Moving Average Crossover using monthly prices.
 
         Crossover score :math:`Z` over :math:`k` months is calculated as:
 
@@ -72,7 +74,7 @@ class Signal:
         return sma
 
     def protective_momentum_score(self) -> pd.DataFrame:
-        """Used in Generalized Protective Momentum."""
+        """Calculate momentum score for Generalized Protective Momentum portfolios."""
         returns = self.prices.pct_change()
         ew_basket = returns.mean(axis=1).rename("ew_basket")
         grouper = returns.join(ew_basket)

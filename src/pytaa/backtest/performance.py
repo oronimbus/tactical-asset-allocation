@@ -8,6 +8,8 @@ from pytaa.tools.risk import autocorrelation
 
 
 class Tearsheet:
+    """Analyse the performance of a set of strategies using common risk and return metrics."""
+
     def __init__(self, returns: pd.DataFrame, benchmark: pd.DataFrame = None):
         """Initialize tearsheet with strategy returns and benchmark.
 
@@ -18,7 +20,7 @@ class Tearsheet:
         self.returns = returns
         self.benchmark = benchmark
 
-    def summary(self, ann_factor: int = 12, **kwargs) -> pd.DataFrame:
+    def summary(self, ann_factor: int = 12) -> pd.DataFrame:
         """Create table with summary statistics.
 
         Args:

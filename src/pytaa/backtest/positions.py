@@ -291,14 +291,14 @@ def aqr_trend_allocation(
     strategy_weights = []
 
     for date in rebalance_dates[rebalance_dates >= signal.dropna().index.min()]:
-        return_sample = returns.loc[returns.index <= date].iloc[-260 * 3 :, :]
+        return_sample = returns.loc[returns.index <= date].iloc[-260 * 3:, :]
         monthly_ret = return_sample.resample("BM").apply(lambda x: np.prod(1 + x) - 1)
         excess_ret = monthly_ret[risk_assets].sub(monthly_ret[[cash_asset]].values)
 
         # weight assets by inverse of vol: s_i = 1 / vol_i / (1 / sum[vol_i])
         inv_vol = 1 / excess_ret.std() * np.sqrt(12)
         buy_assets = signal.loc[signal.index <= date, risk_assets].iloc[-1].ge(0)
-        buy_assets = buy_assets[buy_assets == True].index
+        buy_assets = buy_assets.replace({False: np.nan}).dropna().index
 
         # portfolio weights calculation
         risk_allocation = len(buy_assets) / len(risk_assets)

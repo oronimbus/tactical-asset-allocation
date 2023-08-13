@@ -80,7 +80,7 @@ def ledoit_wolf_constant_correlation(
     Returns:
         np.array: a shrunk covariance matrix
     """
-    X = np.asarray(data)
+    X = np.asarray(data)   # noqa: N806
     x = X - X.mean(axis=0)
     t, n = np.shape(X)
 
@@ -126,6 +126,8 @@ def ledoit_wolf_constant_correlation(
 
 
 class Covariance(np.ndarray):
+    """Instantiate covariance matrix as numpy object."""
+
     def __new__(
         cls,
         data: pd.DataFrame,
@@ -160,7 +162,6 @@ class Covariance(np.ndarray):
         Returns:
             np.array: NxN covariance matrix
         """
-
         if self.shrinkage is None:
             return np.cov(self, rowvar=False)
         elif self.shrinkage == "ledoit_wolf":
@@ -215,7 +216,7 @@ def calculate_risk_parity_portfolio(
     optimal_weights = result.x.flatten() / np.sum(result.x.flatten())
     if result.success:
         return optimal_weights
-    logger.warn("Risk Parity optimization failed: returning inverse vol weights.")
+    logger.warning("Risk Parity optimization failed: returning inverse vol weights.")
     return initial_weights
 
 
@@ -246,11 +247,13 @@ def calculate_min_variance_portfolio(cov: Union[Covariance, np.array]) -> np.arr
 
     if result.success:
         return result.x.flatten()
-    logger.warn("Min variance optimization failed: returning inverse vol weights.")
+    logger.warning("Min variance optimization failed: returning inverse vol weights.")
     return initial_weights
 
 
-def calculate_mean_variance_portfolio(mu: np.array, cov: Union[Covariance, np.array]) -> np.array:
+def calculate_mean_variance_portfolio(
+    mu: np.array, cov: Union[Covariance, np.array]  # noqa: C0103
+) -> np.array:
     """Calculate mean-variance portfolio with no leverage.
 
     Args:
@@ -280,7 +283,7 @@ def calculate_mean_variance_portfolio(mu: np.array, cov: Union[Covariance, np.ar
 
     if result.success:
         return result.x.flatten()
-    logger.warn("Mean variance optimization failed: returning equal weights.")
+    logger.warning("Mean variance optimization failed: returning equal weights.")
     return initial_weights
 
 
@@ -305,10 +308,10 @@ def weighted_covariance_matrix(
     data: pd.DataFrame, weights: list = (12, 4, 2, 1), vol_window: int = 21, ann_factor: int = 252
 ) -> np.array:
     """Calculate weighted covariance matrix.
-    
+
     This technique is used in Kipnis Asset Allocation. Each weight in the ``weights`` list refers
     to a number of months. The weighted correlation matrix is first calculated as:
-    
+
     R = [(21-day correlation * 12) + (63-day correlation * 4) + (126-day correlation * 2) + \
         (252-day correlation)] / 19
 

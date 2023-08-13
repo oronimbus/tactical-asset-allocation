@@ -57,7 +57,7 @@ def validate_tickers(tickers: List[str], raise_issue: bool = False) -> bool:
 
     if not is_valid and not raise_issue:
         return is_valid
-    elif not is_valid and raise_issue:
+    if not is_valid and raise_issue:
         raise Exception("Tickers are not valid in Yahoo! Finace. Review inputs before proceeding.")
     return True
 
@@ -65,7 +65,7 @@ def validate_tickers(tickers: List[str], raise_issue: bool = False) -> bool:
 def get_historical_price_data(
     tickers: List[str], start_date: str, end_date: str, **kwargs: dict
 ) -> pd.DataFrame:
-    """Simple data request using Yahoo! Finance API.
+    """Request price data using Yahoo! Finance API.
 
     Args:
         tickers (List[str]): list of tickers
@@ -119,11 +119,11 @@ def get_currency_returns(
     zeros = pd.Series(np.zeros(date_range.shape[0]), index=date_range)
 
     to_concat = []
-    for fx in currency_list:
-        if fx == base_currency:
+    for ccy in currency_list:
+        if ccy == base_currency:
             to_concat.append(zeros)
         else:
-            to_concat.append(fx_returns.loc[:, f"{base_currency}{fx}=X"])
+            to_concat.append(fx_returns.loc[:, f"{base_currency}{ccy}=X"])
 
     fx_returns = pd.concat(to_concat, axis=1).fillna(0)
     fx_returns.columns = currency_list
@@ -155,13 +155,16 @@ def find_ticker_currency(ticker: str, fallback: str = "USD") -> str:
         inner_html = str(tostring(parser))
         to_find = "Currency in"
         loc_ccy = inner_html.find(to_find) + len(to_find) + 1
-        currency = inner_html[loc_ccy : loc_ccy + 3]
+        currency = inner_html[loc_ccy: loc_ccy + 3]
         if currency.upper() in VALID_CURRENCIES:
             return currency
-        else:
-            logger.warn(f"Unsucessful GET request for {ticker}. Using default currency {fallback}.")
-            return fallback
-    except:
+
+        # if we get here it means the currency is not valid and we log a warning
+        msg = f"Unsucessful GET request for {ticker}. Using default currency {fallback}."
+        logger.warning(msg)
+        return fallback
+    except Exception as e:
+        logger.warning("Error in request: %s. Returning fallback currency.", e)
         return fallback
 
 
@@ -184,7 +187,7 @@ def get_issue_currency_for_tickers(tickers: List[str]) -> List[str]:
             try:
                 results[futures[future]] = future.result()
             except Exception as exc:
-                logger.warn(exc)
+                logger.warning(exc)
     return [results[ticker] for ticker in tickers]
 
 
@@ -217,7 +220,6 @@ def get_strategy_price_data(
 
 if __name__ == "__main__":
     from src.pytaa.strategy.static import STRATEGIES
-    from src.pytaa.strategy.strategies import StrategyPipeline
 
-    pipeline = StrategyPipeline(STRATEGIES)
-    print(get_strategy_price_data(pipeline, "2011-01-01").dropna())
+    some_pipeline = StrategyPipeline(STRATEGIES)
+    print(get_strategy_price_data(some_pipeline, "2011-01-01").dropna())

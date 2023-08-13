@@ -5,15 +5,29 @@ description = "A lean package for analysing tactical asset allocation."
 
 [build-system]
 requires = [
-    "setuptools >= 35.0.2",
-    "setuptools_scm >= 2.0.0, <3"
+    "setuptools >= 49",
+    "wheel >= 0.35",
+    "setuptools_scm[toml] >= 3.4"
 ]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 100
 
+[tool.pylint."MASTER"]
+ignore-patterns = "__init__.py"
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ""
+
+[tool.pylint."REPORTS"]
+output-format = "colorized"
+msg-template = "{msg_id} {{symbol}}: {path}:{line}, {column}: {obj}: {msg}"
+
 [tool.pytest.ini_options]
 pythonpath = [
   "src"
 ]
+
+[tool.isort]
+profile = "black"

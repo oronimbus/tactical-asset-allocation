@@ -67,10 +67,14 @@ def get_historical_price_data(
 ) -> pd.DataFrame:
     """Request price data using Yahoo! Finance API.
 
+    Additional keyword arguments can be passed to control if and how tickers are validated. You
+    can pass ``raise_issue=True`` to raise an Exception if an invalid ticker is present.
+
     Args:
         tickers (List[str]): list of tickers
         start_date (str): start date of time series
         end_date (str): end date of time series
+        **kwargs (dict): key word arguments for ticker validation
 
     Returns:
         pd.DataFrame: table of prices

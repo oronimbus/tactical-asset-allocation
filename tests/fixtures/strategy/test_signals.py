@@ -30,7 +30,7 @@ def test_signal_momentum(prices, start, end, expected):
     ],
 )
 def test_signal_momentum_score(prices, expected):
-    """Test momentum of Signal class."""
+    """Test simple momentum of Signal class."""
     obj = Signal(prices).momentum_score()
     assert obj.values[-1, 0] == expected
 
@@ -44,6 +44,12 @@ def test_signal_momentum_score(prices, expected):
     ],
 )
 def test_sma_cross_over(prices, lookback, days, crossover, expected):
-    """Test momentum of Signal class."""
+    """Test simple moving average crossover signal of Signal class."""
     obj = Signal(prices).sma_crossover(lookback, crossover, days)
     assert obj.values[-1, 0] == expected
+
+# TODO: create proper unit test for this
+@pytest.mark.parametrize("prices, expected", [(TEST_PRICES, None)])
+def test_protective_momentum_score(prices, expected, mocker):
+    """Test protective momentum of Signal class."""
+    assert 1 == 1

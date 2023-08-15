@@ -80,7 +80,7 @@ def ledoit_wolf_constant_correlation(
     Returns:
         np.array: a shrunk covariance matrix
     """
-    X = np.asarray(data)   # noqa: N806
+    X = np.asarray(data)  # noqa: N806
     x = X - X.mean(axis=0)
     t, n = np.shape(X)
 
@@ -162,15 +162,15 @@ class Covariance(np.ndarray):
         Returns:
             np.array: NxN covariance matrix
         """
-        if self.shrinkage is None:
+        if self.shrinkage is None:  # noqa: E1101
             return np.cov(self, rowvar=False)
-        elif self.shrinkage == "ledoit_wolf":
-            return ledoit_wolf_constant_correlation(self, self.shrinkage_factor)
-        elif self.shrinkage == "constant":
+        elif self.shrinkage == "ledoit_wolf":  # noqa: E1101
+            return ledoit_wolf_constant_correlation(self, self.shrinkage_factor)  # noqa: E1101
+        elif self.shrinkage == "constant":  # noqa: E1101
             sample_cov = np.cov(self, rowvar=False)
             target_cov = (1 - self.shrinkage_factor) * np.eye(sample_cov.shape[1])
             return self.shrinkage_factor * sample_cov + target_cov
-        elif self.shrinkage == "weighted":
+        elif self.shrinkage == "weighted":  # noqa: E1101
             return weighted_covariance_matrix(self, **kwargs)
         else:
             raise NotImplementedError

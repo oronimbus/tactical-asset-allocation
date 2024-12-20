@@ -1,4 +1,5 @@
 """Computes signals used in the asset allocation schemes."""
+
 import numpy as np
 import pandas as pd
 
@@ -13,7 +14,7 @@ class Signal:
             prices (pd.DataFrame): table of daily returns
         """
         self.prices = prices
-        self.monthly_prices = self.prices.resample("BM").last()
+        self.monthly_prices = self.prices.resample("BME").last()
 
     def classic_momentum(self, start: int = 12, end: int = 1) -> pd.DataFrame:
         r"""Classic cross-sectional Momentum definition by Jegadeesh.
@@ -68,7 +69,7 @@ class Signal:
         Returns:
             pd.DataFrame: table of signal strength
         """
-        sma = self.prices.rolling(days * lookback).mean().resample("BM").last()
+        sma = self.prices.rolling(days * lookback).mean().resample("BME").last()
         if crossover:
             return self.monthly_prices.div(sma) - 1
         return sma
@@ -78,7 +79,7 @@ class Signal:
         returns = self.prices.pct_change()
         ew_basket = returns.mean(axis=1).rename("ew_basket")
         grouper = returns.join(ew_basket)
-        rolling_corr = grouper.rolling(252).corr(grouper["ew_basket"]).resample("BM").last()
+        rolling_corr = grouper.rolling(252).corr(grouper["ew_basket"]).resample("BME").last()
 
         avg_return = np.zeros_like(self.monthly_prices)
         for horizon in [1, 3, 6, 12]:

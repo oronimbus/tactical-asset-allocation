@@ -1,12 +1,11 @@
-import pytest
 import pandas as pd
+import pytest
 
 from pytaa.strategy.signals import Signal
 
-
 TEST_PRICES = pd.DataFrame(
     {"p": [100, 102, 101, 104, 103, 101, 99, 98, 97, 98, 95, 94, 96]},
-    index=pd.bdate_range("2010-01-01", "2011-02-01", freq="BM"),
+    index=pd.bdate_range("2010-01-01", "2011-02-01", freq="BME"),
 )
 
 
@@ -47,6 +46,7 @@ def test_sma_cross_over(prices, lookback, days, crossover, expected):
     """Test simple moving average crossover signal of Signal class."""
     obj = Signal(prices).sma_crossover(lookback, crossover, days)
     assert obj.values[-1, 0] == expected
+
 
 # TODO: create proper unit test for this
 @pytest.mark.parametrize("prices, expected", [(TEST_PRICES, None)])

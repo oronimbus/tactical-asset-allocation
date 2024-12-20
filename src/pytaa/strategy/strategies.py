@@ -1,4 +1,5 @@
 """Store data containers for strategies."""
+
 from dataclasses import dataclass, field
 from typing import List
 

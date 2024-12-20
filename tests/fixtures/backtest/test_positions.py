@@ -1,13 +1,13 @@
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
 from pytaa.backtest.positions import (
-    Positions,
     EqualWeights,
-    vigilant_allocation,
-    rolling_optimization,
+    Positions,
     kipnis_allocation,
+    rolling_optimization,
+    vigilant_allocation,
 )
 
 TEST_ASSETS = ["A", "B", "C", "D"]

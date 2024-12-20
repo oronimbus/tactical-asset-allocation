@@ -1,14 +1,14 @@
 import numpy as np
-import pytest
 import pandas as pd
+import pytest
 
 from pytaa.tools.data import (
-    validate_tickers,
+    find_ticker_currency,
     get_historical_dividends,
     get_historical_price_data,
-    find_ticker_currency,
     get_issue_currency_for_tickers,
     get_strategy_price_data,
+    validate_tickers,
 )
 
 
@@ -38,12 +38,15 @@ def test_find_ticker_currency(tix, fb, expected):
 
 
 @pytest.mark.parametrize(
-    "tix, start, end, expected", [("AAPL", "2022-01-31", "2022-02-01", 173.033234)]
+    "tix, start, end, adj, expected", [
+        ("AAPL", "2022-01-31", "2022-02-01", True, 171.963119),
+        ("AAPL", "2022-01-31", "2022-02-01", False, 174.77999),
+    ]
 )
-def test_get_historical_price_data(tix, start, end, expected):
+def test_get_historical_price_data(tix, start, end, adj, expected):
     """Test historical price data request."""
-    output = get_historical_price_data([tix], start, end)
-    close = output["Adj Close"][tix].values[0]
+    output = get_historical_price_data([tix], start, end, adj)
+    close = output["Close"][tix].values[0]
     assert np.isclose(close, expected)
 
 

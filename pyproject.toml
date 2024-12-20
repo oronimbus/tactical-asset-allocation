@@ -1,8 +1,3 @@
-[project]
-name = "pytaa"
-version = "0.3.0"
-description = "A lean package for analysing tactical asset allocation."
-
 [build-system]
 requires = [
     "setuptools >= 49",

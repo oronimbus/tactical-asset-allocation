@@ -1,4 +1,5 @@
 """Calculate portfolio strategy returns."""
+
 import numba
 import numpy as np
 import pandas as pd

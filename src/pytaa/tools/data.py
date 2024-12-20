@@ -1,4 +1,5 @@
 """Data handling and webscraping tools."""
+
 import concurrent.futures
 import logging
 from datetime import datetime
@@ -8,8 +9,7 @@ import numpy as np
 import pandas as pd
 import requests
 import yfinance as yf
-from lxml import html
-from lxml.etree import tostring
+from lxml import etree, html
 
 from pytaa.strategy.static import VALID_CURRENCIES
 from pytaa.strategy.strategies import StrategyPipeline
@@ -63,7 +63,7 @@ def validate_tickers(tickers: List[str], raise_issue: bool = False) -> bool:
 
 
 def get_historical_price_data(
-    tickers: List[str], start_date: str, end_date: str, **kwargs: dict
+    tickers: List[str], start_date: str, end_date: str, adjust: bool = False, **kwargs: dict
 ) -> pd.DataFrame:
     """Request price data using Yahoo! Finance API.
 
@@ -74,6 +74,7 @@ def get_historical_price_data(
         tickers (List[str]): list of tickers
         start_date (str): start date of time series
         end_date (str): end date of time series
+        adjust (bool): adjust yahoo-finance request for corporate actions
         **kwargs (dict): key word arguments for ticker validation
 
     Returns:
@@ -82,11 +83,13 @@ def get_historical_price_data(
     tickers = list(set(tickers))
     is_valid = validate_tickers(tickers, **kwargs)
     if not is_valid:
-        return pd.DataFrame(columns=["Close", "Open", "Low", "High", "Volume", "Adj Close"])
+        return pd.DataFrame(columns=["Close", "Open", "Low", "High", "Volume"])
 
     # if tickers are valid then launch yfinance API
     str_of_tickers = " ".join(tickers)
-    data = yf.download(str_of_tickers, start=start_date, end=end_date, progress=False)
+    data = yf.download(
+        str_of_tickers, start=start_date, end=end_date, auto_adjust=adjust, progress=False
+    )
     if data.columns.nlevels <= 1:
         data.columns = pd.MultiIndex.from_product([data.columns, tickers])
     return data
@@ -156,10 +159,11 @@ def find_ticker_currency(ticker: str, fallback: str = "USD") -> str:
     try:
         response = requests.get(url, headers=headers, timeout=10)
         parser = html.fromstring(response.text)
-        inner_html = str(tostring(parser))
-        to_find = "Currency in"
-        loc_ccy = inner_html.find(to_find) + len(to_find) + 1
-        currency = inner_html[loc_ccy: loc_ccy + 3]
+        inner_html = str(etree.tostring(parser))
+        to_find = "exchange yf-wk4yba"
+        span = inner_html[inner_html.find(to_find): inner_html.find(to_find) + 200]
+        currency = span.split("<span>")[-1][:3]
+
         if currency.upper() in VALID_CURRENCIES:
             return currency
 

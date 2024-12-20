@@ -1,4 +1,5 @@
 """Configure package level logger."""
+
 import logging
 
 

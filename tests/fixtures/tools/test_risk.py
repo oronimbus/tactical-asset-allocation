@@ -1,14 +1,13 @@
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
 from pytaa.tools.risk import (
     autocorrelation,
-    calculate_rolling_volatility,
     calculate_risk_parity_portfolio,
+    calculate_rolling_volatility,
     risk_contribution,
 )
-
 
 n_sample = 10
 index = pd.bdate_range("2011-01-01", "2011-01-31")

@@ -1,6 +1,5 @@
 """List strategies in serializable format."""
 
-
 STRATEGIES = [
     {
         "tag": "IVY",
@@ -15,7 +14,7 @@ STRATEGIES = [
         "name": "Robust Asset Allocation Balanced",
         "riskAssets": ["VNQ", "IEF", "DBC", "MTUM", "IWD", "EFA", "EFV"],
         "safeAssets": ["BIL"],
-        "weights": [0.15, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1],
+        "weights": [0.15, 0.14, 0.11, 0.08, 0.08, 0.07, 0.07],
         "frequency": "M",
     },
     {

@@ -1,4 +1,5 @@
 """Utility functions such as volatility estimators and statistical measures."""
+
 import logging
 from typing import Union
 

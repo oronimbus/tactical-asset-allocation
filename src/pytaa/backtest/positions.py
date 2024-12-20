@@ -1,4 +1,5 @@
 """Store base functions for weights and positions."""
+
 from datetime import datetime
 from typing import Callable, List
 
@@ -6,11 +7,11 @@ import numpy as np
 import pandas as pd
 
 from pytaa.tools.risk import (
-    calculate_risk_parity_portfolio,
+    Covariance,
     calculate_min_variance_portfolio,
+    calculate_risk_parity_portfolio,
     calculate_rolling_volatility,
     weighted_covariance_matrix,
-    Covariance,
 )
 
 
@@ -146,7 +147,7 @@ def rolling_optimization(
         w_opt = optimizer(cov)
         weights.append(w_opt)
 
-    weights = pd.DataFrame(np.row_stack(weights), index=rebalance_dates, columns=returns.columns)
+    weights = pd.DataFrame(np.vstack(weights), index=rebalance_dates, columns=returns.columns)
     return weights
 
 
@@ -274,7 +275,7 @@ def aqr_trend_allocation(
     risk_assets: List[str],
     cash_asset: str,
 ) -> pd.DataFrame:
-    """_summAllocate portfolio to trending assets using AQR Risk Parity methodology.
+    """Allocate portfolio to trending assets using AQR Risk Parity methodology.
 
     Puts share of non-trending assets into cash, depending on signal strength.ary_
 
@@ -292,13 +293,13 @@ def aqr_trend_allocation(
 
     for date in rebalance_dates[rebalance_dates >= signal.dropna().index.min()]:
         return_sample = returns.loc[returns.index <= date].iloc[-260 * 3:, :]
-        monthly_ret = return_sample.resample("BM").apply(lambda x: np.prod(1 + x) - 1)
+        monthly_ret = return_sample.resample("BME").apply(lambda x: np.prod(1 + x) - 1)
         excess_ret = monthly_ret[risk_assets].sub(monthly_ret[[cash_asset]].values)
 
         # weight assets by inverse of vol: s_i = 1 / vol_i / (1 / sum[vol_i])
         inv_vol = 1 / excess_ret.std() * np.sqrt(12)
         buy_assets = signal.loc[signal.index <= date, risk_assets].iloc[-1].ge(0)
-        buy_assets = buy_assets.replace({False: np.nan}).dropna().index
+        buy_assets = buy_assets.index[buy_assets]
 
         # portfolio weights calculation
         risk_allocation = len(buy_assets) / len(risk_assets)
